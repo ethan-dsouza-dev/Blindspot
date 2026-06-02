@@ -1,16 +1,21 @@
 package com.blindspot.app.ui.components
 
+import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -44,10 +49,22 @@ fun CompassView(
     distanceLabel: String? = null,
     targetLabel: String? = null,
 ) {
-    // Animate along the shortest path to avoid spinning across the 0/360 boundary.
+    // Track an "unwrapped" target so the needle always turns the short way and never spins a
+    // full circle across the 0/360 boundary. Each update nudges the accumulated target by the
+    // signed delta in [-180, 180].
+    var unwrappedTarget by remember { mutableFloatStateOf(rotationDegrees) }
+    LaunchedEffect(rotationDegrees) {
+        val delta = ((rotationDegrees - unwrappedTarget + 540f) % 360f) - 180f
+        unwrappedTarget += delta
+    }
+
+    // A medium-stiffness spring feels responsive without overshooting wildly.
     val animatedRotation by animateFloatAsState(
-        targetValue = rotationDegrees,
-        animationSpec = tween(durationMillis = 500),
+        targetValue = unwrappedTarget,
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioNoBouncy,
+            stiffness = Spring.StiffnessMedium,
+        ),
         label = "needle",
     )
 
@@ -63,21 +80,30 @@ fun CompassView(
             }
         }
 
-        if (distanceLabel != null) {
-            Text(
-                text = distanceLabel,
-                style = MaterialTheme.typography.headlineSmall,
-                fontWeight = FontWeight.SemiBold,
-                color = Color.White,
-            )
-        }
-        if (targetLabel != null) {
-            Text(
-                text = targetLabel,
-                style = MaterialTheme.typography.labelMedium,
-                color = Color.White.copy(alpha = 0.7f),
-                modifier = Modifier.align(Alignment.Center).padding(top = 40.dp),
-            )
+        // Labels live in the bottom half of the dial, centered around the ~3/4 height point.
+        if (distanceLabel != null || targetLabel != null) {
+            Column(
+                modifier = Modifier
+                    .align(Alignment.Center)
+                    .offset(y = size / 4),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                if (distanceLabel != null) {
+                    Text(
+                        text = distanceLabel,
+                        style = MaterialTheme.typography.headlineSmall,
+                        fontWeight = FontWeight.SemiBold,
+                        color = Color.White,
+                    )
+                }
+                if (targetLabel != null) {
+                    Text(
+                        text = targetLabel,
+                        style = MaterialTheme.typography.labelMedium,
+                        color = Color.White.copy(alpha = 0.7f),
+                    )
+                }
+            }
         }
     }
 }

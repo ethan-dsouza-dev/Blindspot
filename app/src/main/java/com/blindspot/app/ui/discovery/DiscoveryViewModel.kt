@@ -32,17 +32,19 @@ class DiscoveryViewModel(
     private var lastLocation: Location? = null
     private var deviceHeading: Float = 0f
     private var started = false
+    private var placesLoaded = false
 
     /**
-     * Begins location + heading collection and loads places. Safe to call repeatedly (e.g. after
-     * permission is granted); only the first call starts collection.
+     * Begins location + heading collection. Places are loaded only once a real location fix is
+     * available (see [onLocationUpdate]); we never query with a placeholder coordinate, which
+     * previously generated places near (0,0) and produced wildly wrong distances.
      */
     fun start() {
         if (started) return
         started = true
+        _uiState.update { it.copy(status = DiscoveryUiState.Status.Loading) }
         observeHeading()
         observeLocation()
-        loadPlaces()
     }
 
     private fun observeHeading() {
@@ -56,27 +58,26 @@ class DiscoveryViewModel(
 
     private fun observeLocation() {
         viewModelScope.launch {
-            // Seed with last known location for an immediate fix.
-            locationProvider.lastLocation()?.let {
-                lastLocation = it
-                if (_uiState.value.places.isEmpty()) loadPlaces()
-                recomputeCompass()
-            }
-            locationProvider.locationUpdates().collect { location ->
-                lastLocation = location
-                recomputeCompass()
-            }
+            // Seed with last known location for an immediate fix, if available.
+            locationProvider.lastLocation()?.let { onLocationUpdate(it) }
+            locationProvider.locationUpdates().collect { onLocationUpdate(it) }
         }
     }
 
-    private fun loadPlaces() {
-        val location = lastLocation
+    private fun onLocationUpdate(location: Location) {
+        lastLocation = location
+        // Load places against the first real fix; later movement just refreshes the compass.
+        if (!placesLoaded) {
+            placesLoaded = true
+            loadPlaces(location)
+        }
+        recomputeCompass()
+    }
+
+    private fun loadPlaces(location: Location) {
         viewModelScope.launch {
             _uiState.update { it.copy(status = DiscoveryUiState.Status.Loading) }
-            // Default to a neutral coordinate if we have no fix yet; will refresh when one arrives.
-            val lat = location?.latitude ?: 0.0
-            val lng = location?.longitude ?: 0.0
-            placeRepository.getNearbyPlaces(lat, lng)
+            placeRepository.getNearbyPlaces(location.latitude, location.longitude)
                 .onSuccess { places ->
                     _uiState.update {
                         it.copy(
@@ -92,6 +93,7 @@ class DiscoveryViewModel(
                     recomputeCompass()
                 }
                 .onFailure { error ->
+                    placesLoaded = false // allow retry to reload
                     _uiState.update {
                         it.copy(
                             status = DiscoveryUiState.Status.Error,
@@ -110,8 +112,12 @@ class DiscoveryViewModel(
         recomputeCompass()
     }
 
-    /** Manual retry after an error. */
-    fun retry() = loadPlaces()
+    /** Manual retry after an error. Reloads against the latest known location, if any. */
+    fun retry() {
+        val location = lastLocation ?: return
+        placesLoaded = true
+        loadPlaces(location)
+    }
 
     private fun recomputeCompass() {
         val state = _uiState.value

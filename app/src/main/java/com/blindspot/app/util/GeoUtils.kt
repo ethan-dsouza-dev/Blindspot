@@ -1,5 +1,6 @@
 package com.blindspot.app.util
 
+import java.util.Locale
 import kotlin.math.atan2
 import kotlin.math.cos
 import kotlin.math.sin
@@ -57,7 +58,7 @@ object GeoUtils {
      */
     fun formatDistance(meters: Double): String = when {
         meters < 1_000 -> "${meters.toInt()} m"
-        else -> String.format("%.1f km", meters / 1_000)
+        else -> String.format(Locale.US, "%.1f km", meters / 1_000)
     }
 
     /**

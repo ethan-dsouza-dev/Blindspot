@@ -64,7 +64,7 @@ class CompassSensorManager(context: Context) {
     /**
      * Angular low-pass filter that correctly handles the 0/360 wrap-around.
      */
-    private fun lowPass(newValue: Float, previous: Float?, alpha: Float = 0.15f): Float {
+    private fun lowPass(newValue: Float, previous: Float?, alpha: Float = 0.35f): Float {
         if (previous == null) return newValue
         var delta = newValue - previous
         if (delta > 180f) delta -= 360f
