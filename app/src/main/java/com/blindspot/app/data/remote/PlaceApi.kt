@@ -4,18 +4,16 @@ import retrofit2.http.GET
 import retrofit2.http.Query
 
 /**
- * Retrofit definition for the places endpoint.
+ * Retrofit definition for the bars-nearby endpoint.
  *
- * The backend is not yet implemented; this interface documents the expected contract so the
- * real implementation can be dropped in by swapping the repository binding in Koin.
+ * Maps to `GET /bars/nearby?lat=&lng=&radius=` on the Blindspot backend.
  */
 interface PlaceApi {
 
-    @GET("places")
+    @GET("bars/nearby")
     suspend fun getNearbyPlaces(
         @Query("lat") latitude: Double,
         @Query("lng") longitude: Double,
-        @Query("category") category: String = "bar",
-        @Query("radius_m") radiusMeters: Int = 5_000,
+        @Query("radius") radiusMeters: Int,
     ): List<PlaceDto>
 }

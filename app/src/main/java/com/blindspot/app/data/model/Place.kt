@@ -16,4 +16,5 @@ data class Place(
     val imageUrl: String? = null,
     val rating: Double? = null,
     val priceLevel: Int? = null,
+    val distanceMeters: Double? = null,
 )
