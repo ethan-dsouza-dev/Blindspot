@@ -15,7 +15,7 @@ import org.koin.dsl.module
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 
-private const val BASE_URL = ""
+private const val BASE_URL = "https://api.blindspot.example/"
 
 val appModule = module {
 
