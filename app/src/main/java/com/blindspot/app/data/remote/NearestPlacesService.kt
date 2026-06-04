@@ -23,6 +23,6 @@ class NearestPlacesService(
             .map { it.toDomain() }
 
     companion object {
-        const val DEFAULT_RADIUS_METERS = 100
+        const val DEFAULT_RADIUS_METERS = 1000
     }
 }
