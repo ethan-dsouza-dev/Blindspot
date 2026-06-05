@@ -71,6 +71,8 @@ fun DiscoveryScreen(
                 sheetState = sheetState,
                 onDismiss = { sheetVisible = false },
                 onSkip = { viewModel.skipToNext() },
+                onBack = { viewModel.skipToPrevious() },
+                showBack = state.hasPrevious,
             )
         }
     }

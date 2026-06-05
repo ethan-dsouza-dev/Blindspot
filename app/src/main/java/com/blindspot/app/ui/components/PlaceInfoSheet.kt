@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.SkipNext
+import androidx.compose.material.icons.filled.SkipPrevious
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -16,6 +17,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.SheetState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -41,7 +43,9 @@ fun PlaceInfoSheet(
     sheetState: SheetState,
     onDismiss: () -> Unit,
     onSkip: () -> Unit,
+    onBack: () -> Unit,
     modifier: Modifier = Modifier,
+    showBack: Boolean = true,
 ) {
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -102,18 +106,35 @@ fun PlaceInfoSheet(
                 color = Color.White.copy(alpha = 0.8f),
             )
 
-            Button(
-                onClick = onSkip,
+            Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(top = 8.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = GeminiBlue),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalAlignment = Alignment.CenterVertically,
             ) {
-                Icon(imageVector = Icons.Filled.SkipNext, contentDescription = null)
-                Text(
-                    text = "  Point to another place",
-                    fontWeight = FontWeight.SemiBold,
-                )
+                if (showBack) {
+                    OutlinedButton(
+                        onClick = onBack,
+                        colors = ButtonDefaults.outlinedButtonColors(contentColor = GeminiBlue),
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.SkipPrevious,
+                            contentDescription = "Point to the previous place",
+                        )
+                    }
+                }
+                Button(
+                    onClick = onSkip,
+                    modifier = Modifier.weight(1f),
+                    colors = ButtonDefaults.buttonColors(containerColor = GeminiBlue),
+                ) {
+                    Icon(imageVector = Icons.Filled.SkipNext, contentDescription = null)
+                    Text(
+                        text = "  Point to another place",
+                        fontWeight = FontWeight.SemiBold,
+                    )
+                }
             }
         }
     }

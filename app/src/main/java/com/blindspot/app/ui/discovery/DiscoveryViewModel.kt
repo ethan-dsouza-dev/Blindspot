@@ -112,6 +112,14 @@ class DiscoveryViewModel(
         recomputeCompass()
     }
 
+    /** Returns the compass to the previously recommended place (the reverse of [skipToNext]). */
+    fun skipToPrevious() {
+        val state = _uiState.value
+        if (!state.hasPrevious) return
+        _uiState.update { it.copy(currentIndex = it.currentIndex - 1) }
+        recomputeCompass()
+    }
+
     /** Manual retry after an error. Reloads against the latest known location, if any. */
     fun retry() {
         val location = lastLocation ?: return

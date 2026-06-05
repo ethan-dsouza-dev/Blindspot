@@ -17,6 +17,7 @@ data class DiscoveryUiState(
 ) {
     val currentPlace: Place? get() = places.getOrNull(currentIndex)
     val hasNext: Boolean get() = currentIndex < places.lastIndex
+    val hasPrevious: Boolean get() = currentIndex > 0
 
     enum class Status { Loading, Content, Empty, Error }
 }
