@@ -136,8 +136,9 @@ class DiscoveryViewModel(
             location.latitude, location.longitude, place.latitude, place.longitude,
         )
         val rotation = GeoUtils.normalizeDegrees(bearing - deviceHeading)
-        // Prefer the backend-provided distance; fall back to a local computation as the user moves.
-        val distance = place.distanceMeters ?: GeoUtils.distanceMeters(
+        // Always compute distance from the live location so it updates as the user moves. The
+        // backend-provided `place.distanceMeters` is only a snapshot from query time.
+        val distance = GeoUtils.distanceMeters(
             location.latitude, location.longitude, place.latitude, place.longitude,
         )
 
