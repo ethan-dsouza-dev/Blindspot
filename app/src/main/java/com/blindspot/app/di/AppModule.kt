@@ -1,7 +1,8 @@
 package com.blindspot.app.di
 
+import com.blindspot.app.data.remote.NearestPlacesService
 import com.blindspot.app.data.remote.PlaceApi
-import com.blindspot.app.data.repository.MockPlaceRepository
+import com.blindspot.app.data.repository.NetworkPlaceRepository
 import com.blindspot.app.data.repository.PlaceRepository
 import com.blindspot.app.location.LocationProvider
 import com.blindspot.app.sensor.CompassSensorManager
@@ -14,10 +15,6 @@ import org.koin.dsl.module
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 
-/**
- * Base URL placeholder until the real backend is available. Swap this (and the repository
- * binding below) to move from the mock to live data.
- */
 private const val BASE_URL = "https://api.blindspot.example/"
 
 val appModule = module {
@@ -41,9 +38,10 @@ val appModule = module {
     }
 
     single { get<Retrofit>().create(PlaceApi::class.java) }
+    single { NearestPlacesService(get()) }
 
-    // Mock for now; replace with a network-backed PlaceRepository when the endpoint is ready.
-    single<PlaceRepository> { MockPlaceRepository() }
+    // Live, network-backed implementation. MockPlaceRepository remains available for testing.
+    single<PlaceRepository> { NetworkPlaceRepository(get()) }
 
     single { LocationProvider(androidContext()) }
     single { CompassSensorManager(androidContext()) }

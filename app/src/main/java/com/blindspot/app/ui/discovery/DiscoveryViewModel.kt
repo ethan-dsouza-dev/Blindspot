@@ -128,7 +128,8 @@ class DiscoveryViewModel(
             location.latitude, location.longitude, place.latitude, place.longitude,
         )
         val rotation = GeoUtils.normalizeDegrees(bearing - deviceHeading)
-        val distance = GeoUtils.distanceMeters(
+        // Prefer the backend-provided distance; fall back to a local computation as the user moves.
+        val distance = place.distanceMeters ?: GeoUtils.distanceMeters(
             location.latitude, location.longitude, place.latitude, place.longitude,
         )
 

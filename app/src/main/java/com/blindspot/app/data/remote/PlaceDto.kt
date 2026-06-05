@@ -17,6 +17,7 @@ data class PlaceDto(
     @SerializedName("image_url") val imageUrl: String? = null,
     @SerializedName("rating") val rating: Double? = null,
     @SerializedName("price_level") val priceLevel: Int? = null,
+    @SerializedName("distance_meters") val distanceMeters: Double? = null,
 )
 
 fun PlaceDto.toDomain(): Place = Place(
@@ -29,4 +30,5 @@ fun PlaceDto.toDomain(): Place = Place(
     imageUrl = imageUrl,
     rating = rating,
     priceLevel = priceLevel,
+    distanceMeters = distanceMeters,
 )
