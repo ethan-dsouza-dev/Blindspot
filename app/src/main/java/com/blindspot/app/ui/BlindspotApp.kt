@@ -1,5 +1,7 @@
 package com.blindspot.app.ui
 
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Icon
@@ -76,6 +78,10 @@ fun BlindspotApp() {
                 navController = navController,
                 startDestination = Destination.Discovery.route,
                 modifier = Modifier.padding(innerPadding),
+                enterTransition = { EnterTransition.None },
+                exitTransition = { ExitTransition.None },
+                popEnterTransition = { EnterTransition.None },
+                popExitTransition = { ExitTransition.None },
             ) {
                 composable(Destination.Maps.route) { MapsScreen() }
                 composable(Destination.Discovery.route) { DiscoveryScreen() }
