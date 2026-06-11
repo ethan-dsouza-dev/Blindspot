@@ -13,7 +13,7 @@ data class Place(
     val category: String,
     val latitude: Double,
     val longitude: Double,
-    val imageUrl: String? = null,
+    val imageUrl: List<String>? = null,
     val rating: Double? = null,
     val priceLevel: Int? = null,
     val distanceMeters: Double? = null,
