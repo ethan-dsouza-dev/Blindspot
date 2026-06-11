@@ -14,7 +14,7 @@ data class PlaceDto(
     @SerializedName("category") val category: String? = null,
     @SerializedName("latitude") val latitude: Double,
     @SerializedName("longitude") val longitude: Double,
-    @SerializedName("image_url") val imageUrl: String? = null,
+    @SerializedName("image_url") val imageUrl: List<String>? = null,
     @SerializedName("rating") val rating: Double? = null,
     @SerializedName("price_level") val priceLevel: Int? = null,
     @SerializedName("distance_meters") val distanceMeters: Double? = null,
