@@ -48,7 +48,7 @@ fun DiscoveryScreen(
 ) {
     PermissionGate(
         modifier = modifier,
-        onGranted = { viewModel.start() },
+        onReady = { viewModel.start() },
     ) {
         LaunchedEffect(Unit) { viewModel.start() }
 
