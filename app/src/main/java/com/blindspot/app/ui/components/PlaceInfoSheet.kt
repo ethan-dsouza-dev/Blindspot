@@ -149,7 +149,7 @@ fun PlaceInfoSheet(
                 ) {
                     Icon(imageVector = Icons.Filled.SkipNext, contentDescription = null)
                     Text(
-                        text = "  Point to another place",
+                        text = "Next",
                         fontWeight = FontWeight.SemiBold,
                     )
                 }
