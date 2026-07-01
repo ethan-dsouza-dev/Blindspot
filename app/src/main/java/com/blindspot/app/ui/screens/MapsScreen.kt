@@ -39,7 +39,7 @@ import org.maplibre.compose.map.OrnamentOptions
 import org.maplibre.compose.style.BaseStyle
 import org.maplibre.spatialk.geojson.Position
 
-private const val DARK_STYLE_URL = "https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json"
+private const val DARK_STYLE_ASSET = "asset://dark_map_style.json"
 private const val USER_ZOOM = 16.0
 private const val MAP_PITCH = 60.0
 
@@ -85,7 +85,7 @@ fun MapsScreen(
         Box(modifier = Modifier.fillMaxSize()) {
             MaplibreMap(
                 modifier = Modifier.fillMaxSize(),
-                baseStyle = BaseStyle.Uri(DARK_STYLE_URL),
+                baseStyle = BaseStyle.Uri(DARK_STYLE_ASSET),
                 cameraState = cameraState,
                 options = MapOptions(ornamentOptions = OrnamentOptions.AllDisabled),
             ) {
