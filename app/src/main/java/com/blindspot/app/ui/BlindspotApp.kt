@@ -1,6 +1,7 @@
 package com.blindspot.app.ui
 
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Icon
@@ -72,18 +73,22 @@ fun BlindspotApp() {
             // Keep all screens composed so nothing (e.g. the map) reloads on tab switch. Render
             // them stacked, ordering the active screen last so it draws on top and receives input;
             // inactive screens stay alive but invisible.
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(innerPadding),
-            ) {
+            Box(modifier = Modifier.fillMaxSize()) {
                 Destination.entries
                     .sortedBy { it == selected }
                     .forEach { destination ->
                         val isActive = destination == selected
+                        // Maps draws edge-to-edge behind the status bar; other screens
+                        // respect the full Scaffold insets.
+                        val screenPadding = if (destination == Destination.Maps) {
+                            PaddingValues(bottom = innerPadding.calculateBottomPadding())
+                        } else {
+                            innerPadding
+                        }
                         Box(
                             modifier = Modifier
                                 .fillMaxSize()
+                                .padding(screenPadding)
                                 .then(if (isActive) Modifier else Modifier.alpha(0f)),
                         ) {
                             when (destination) {
