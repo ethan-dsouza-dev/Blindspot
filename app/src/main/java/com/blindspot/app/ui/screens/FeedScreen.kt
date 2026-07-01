@@ -1,6 +1,7 @@
 package com.blindspot.app.ui.screens
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -44,6 +45,7 @@ fun FeedScreen(
             .fillMaxSize()
             .statusBarsPadding(),
         verticalArrangement = Arrangement.spacedBy(24.dp),
+        contentPadding = PaddingValues(bottom = 100.dp),
     ) {
         item {
             Text(

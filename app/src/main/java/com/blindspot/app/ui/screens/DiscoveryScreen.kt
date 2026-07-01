@@ -137,7 +137,7 @@ private fun DiscoveryContent(
                     place = place,
                     distanceLabel = state.distanceLabel,
                     onClick = onBannerClick,
-                    modifier = Modifier.padding(bottom = 24.dp),
+                    modifier = Modifier.padding(bottom = 100.dp),
                 )
             }
         }

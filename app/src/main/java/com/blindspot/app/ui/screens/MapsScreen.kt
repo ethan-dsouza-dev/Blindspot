@@ -105,7 +105,7 @@ fun MapsScreen(
                     modifier = Modifier
                         .align(Alignment.BottomEnd)
                         .navigationBarsPadding()
-                        .padding(24.dp)
+                        .padding(bottom = 100.dp, end = 24.dp)
                         .size(56.dp)
                         .clip(CircleShape)
                         .clickable(enabled = userPosition != null) {
