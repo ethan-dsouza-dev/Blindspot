@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Map
 import androidx.compose.material.icons.filled.SkipNext
 import androidx.compose.material.icons.filled.SkipPrevious
 import androidx.compose.material.icons.filled.Star
@@ -29,6 +30,7 @@ import androidx.compose.ui.unit.dp
 import com.blindspot.app.data.model.Place
 import com.blindspot.app.ui.theme.BackgroundMid
 import com.blindspot.app.ui.theme.GeminiBlue
+import com.blindspot.app.ui.theme.GeminiTeal
 
 /**
  * Material 3 [ModalBottomSheet] showing details for [place]. Kept as a bottom sheet so the
@@ -46,6 +48,7 @@ fun PlaceInfoSheet(
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
     showBack: Boolean = true,
+    onViewOnMap: (() -> Unit)? = null,
 ) {
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -121,6 +124,21 @@ fun PlaceInfoSheet(
                         Icon(
                             imageVector = Icons.Filled.SkipPrevious,
                             contentDescription = "Point to the previous place",
+                        )
+                    }
+                }
+                if (onViewOnMap != null) {
+                    OutlinedButton(
+                        onClick = { onViewOnMap(); onDismiss() },
+                        colors = ButtonDefaults.outlinedButtonColors(contentColor = GeminiTeal),
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.Map,
+                            contentDescription = "View on Map",
+                        )
+                        Text(
+                            text = "  Map",
+                            fontWeight = FontWeight.SemiBold,
                         )
                     }
                 }

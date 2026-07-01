@@ -35,7 +35,7 @@ fun BlindspotApp() {
     // MapLibre view) is preserved when we reorder the screens to keep the active one on top.
     val mapsContent = remember { movableContentOf<Boolean> { active -> MapsScreen(isActive = active) } }
     val discoveryContent = remember { movableContentOf { DiscoveryScreen() } }
-    val feedContent = remember { movableContentOf { FeedScreen() } }
+    val feedContent = remember { movableContentOf { FeedScreen(onNavigateToMaps = { selected = Destination.Maps }) } }
 
     GradientBackground(modifier = Modifier.fillMaxSize()) {
         Scaffold(
