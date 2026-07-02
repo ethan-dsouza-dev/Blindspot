@@ -41,17 +41,18 @@ fun FloatingNavPill(
         modifier = modifier
             .fillMaxWidth()
             .windowInsetsPadding(WindowInsets.navigationBars)
-            .padding(horizontal = 24.dp, vertical = 16.dp),
+            .padding(horizontal = 24.dp, vertical = 8.dp),
         contentAlignment = Alignment.BottomCenter,
     ) {
         GlassSurface(
             shape = PillShape,
             modifier = Modifier.fillMaxWidth(0.9f),
+            tint = Color.White.copy(alpha = 0.1f),
         ) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 12.dp, vertical = 8.dp),
+                    .padding(horizontal = 12.dp, vertical = 4.dp),
                 horizontalArrangement = Arrangement.SpaceEvenly,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
@@ -67,7 +68,6 @@ fun FloatingNavPill(
                                 tint = it,
                             )
                         },
-                        label = destination.label,
                     )
                 }
             }
@@ -80,7 +80,6 @@ private fun RowScope.FloatingNavItem(
     selected: Boolean,
     onClick: () -> Unit,
     icon: @Composable (tint: Color) -> Unit,
-    label: String,
 ) {
     val tint by animateColorAsState(
         targetValue = if (selected) GeminiBlue else Color.White.copy(alpha = 0.6f),
@@ -88,7 +87,7 @@ private fun RowScope.FloatingNavItem(
         label = "navItemTint",
     )
 
-    Column(
+    Box(
         modifier = Modifier
             .weight(1f)
             .clickable(
@@ -96,16 +95,9 @@ private fun RowScope.FloatingNavItem(
                 indication = null,
                 onClick = onClick,
             )
-            .padding(vertical = 6.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(2.dp),
+            .padding(vertical = 8.dp),
+        contentAlignment = Alignment.Center,
     ) {
         icon(tint)
-        Text(
-            text = label,
-            color = tint,
-            fontSize = 11.sp,
-            maxLines = 1,
-        )
     }
 }
