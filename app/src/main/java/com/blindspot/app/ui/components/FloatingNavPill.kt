@@ -27,7 +27,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.blindspot.app.navigation.Destination
-import com.blindspot.app.ui.theme.GeminiBlue
+import com.blindspot.app.ui.components.aurora.AuroraSurface
+import com.blindspot.app.ui.theme.AuroraTokens
 
 private val PillShape = RoundedCornerShape(32.dp)
 
@@ -44,10 +45,9 @@ fun FloatingNavPill(
             .padding(horizontal = 24.dp, vertical = 8.dp),
         contentAlignment = Alignment.BottomCenter,
     ) {
-        GlassSurface(
+        AuroraSurface(
             shape = PillShape,
             modifier = Modifier.fillMaxWidth(0.9f),
-            tint = Color.White.copy(alpha = 0.1f),
         ) {
             Row(
                 modifier = Modifier
@@ -82,7 +82,7 @@ private fun RowScope.FloatingNavItem(
     icon: @Composable (tint: Color) -> Unit,
 ) {
     val tint by animateColorAsState(
-        targetValue = if (selected) GeminiBlue else Color.White.copy(alpha = 0.6f),
+        targetValue = if (selected) AuroraTokens.AccentCyan else AuroraTokens.TextSecondary,
         animationSpec = tween(durationMillis = 200),
         label = "navItemTint",
     )

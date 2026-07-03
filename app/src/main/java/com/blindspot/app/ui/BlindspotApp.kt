@@ -14,7 +14,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import com.blindspot.app.navigation.Destination
 import com.blindspot.app.ui.components.FloatingNavPill
-import com.blindspot.app.ui.components.GradientBackground
+import com.blindspot.app.ui.components.aurora.AuroraBackground
 import com.blindspot.app.ui.screens.DiscoveryScreen
 import com.blindspot.app.ui.screens.FeedScreen
 import com.blindspot.app.ui.screens.MapsScreen
@@ -29,7 +29,7 @@ fun BlindspotApp() {
     val discoveryContent = remember { movableContentOf { DiscoveryScreen() } }
     val feedContent = remember { movableContentOf { FeedScreen(onNavigateToMaps = { selected = Destination.Maps }) } }
 
-    GradientBackground(modifier = Modifier.fillMaxSize()) {
+    AuroraBackground(modifier = Modifier.fillMaxSize()) {
         Box(modifier = Modifier.fillMaxSize()) {
             // Keep all screens composed so nothing (e.g. the map) reloads on tab switch. Render
             // them stacked, ordering the active screen last so it draws on top and receives input;

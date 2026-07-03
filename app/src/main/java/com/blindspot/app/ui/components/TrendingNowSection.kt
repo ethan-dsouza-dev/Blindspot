@@ -11,10 +11,10 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.blindspot.app.ui.feed.TrendingPlaceItem
+import com.blindspot.app.ui.theme.AuroraTokens
 
 /**
  * "Trending Now" feed section: a left-aligned heading above a horizontally scrollable row of
@@ -31,7 +31,7 @@ fun TrendingNowSection(
             text = "Trending Now",
             style = MaterialTheme.typography.titleLarge,
             fontWeight = FontWeight.Bold,
-            color = Color.White,
+            color = AuroraTokens.TextPrimary,
             modifier = Modifier.padding(start = 20.dp, top = 4.dp, bottom = 12.dp),
         )
         LazyRow(

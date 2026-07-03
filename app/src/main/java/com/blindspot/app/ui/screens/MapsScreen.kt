@@ -21,9 +21,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
-import com.blindspot.app.ui.components.GlassSurface
+import com.blindspot.app.ui.components.aurora.AuroraSurface
 import com.blindspot.app.ui.components.PermissionGate
-import com.blindspot.app.ui.theme.GeminiBlue
+import com.blindspot.app.ui.theme.AuroraTokens
 import kotlinx.coroutines.launch
 import org.maplibre.compose.camera.CameraPosition
 import org.maplibre.compose.camera.CameraState
@@ -104,7 +104,7 @@ fun MapsScreen(
             }
 
             if (isActive) {
-                GlassSurface(
+                AuroraSurface(
                     shape = CircleShape,
                     modifier = Modifier
                         .align(Alignment.BottomEnd)
@@ -123,7 +123,7 @@ fun MapsScreen(
                         Icon(
                             imageVector = Icons.Filled.MyLocation,
                             contentDescription = "Recenter map on my location",
-                            tint = GeminiBlue,
+                            tint = AuroraTokens.AccentCyan,
                             modifier = Modifier.size(24.dp),
                         )
                     }

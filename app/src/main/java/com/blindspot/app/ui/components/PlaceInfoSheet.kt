@@ -40,9 +40,7 @@ import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import com.blindspot.app.R
 import com.blindspot.app.data.model.Place
-import com.blindspot.app.ui.theme.BackgroundMid
-import com.blindspot.app.ui.theme.GeminiBlue
-import com.blindspot.app.ui.theme.GeminiTeal
+import com.blindspot.app.ui.theme.AuroraTokens
 
 /**
  * Material 3 [ModalBottomSheet] showing details for [place]. Kept as a bottom sheet so the
@@ -65,7 +63,7 @@ fun PlaceInfoSheet(
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
-        containerColor = BackgroundMid.copy(alpha = 0.96f),
+        containerColor = AuroraTokens.BaseSlate,
         modifier = modifier,
     ) {
         Column(
@@ -79,7 +77,7 @@ fun PlaceInfoSheet(
                 text = place.name,
                 style = MaterialTheme.typography.headlineSmall,
                 fontWeight = FontWeight.Bold,
-                color = Color.White,
+                color = AuroraTokens.TextPrimary,
             )
 
             Row(
@@ -89,20 +87,20 @@ fun PlaceInfoSheet(
                 Text(
                     text = "$distanceLabel away",
                     style = MaterialTheme.typography.labelLarge,
-                    color = GeminiBlue,
+                    color = AuroraTokens.AccentCyan,
                 )
                 place.rating?.let { rating ->
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(
                             imageVector = Icons.Filled.Star,
                             contentDescription = null,
-                            tint = Color(0xFFFFC93C),
+                            tint = AuroraTokens.RatingStar,
                             modifier = Modifier.size(16.dp),
                         )
                         Text(
                             text = " $rating",
                             style = MaterialTheme.typography.labelLarge,
-                            color = Color.White.copy(alpha = 0.85f),
+                            color = AuroraTokens.TextPrimary,
                         )
                     }
                 }
@@ -110,7 +108,7 @@ fun PlaceInfoSheet(
                     Text(
                         text = "·  ${"$".repeat(level.coerceIn(1, 4))}",
                         style = MaterialTheme.typography.labelLarge,
-                        color = Color.White.copy(alpha = 0.7f),
+                        color = AuroraTokens.TextSecondary,
                     )
                 }
             }
@@ -118,7 +116,7 @@ fun PlaceInfoSheet(
             Text(
                 text = place.description,
                 style = MaterialTheme.typography.bodyMedium,
-                color = Color.White.copy(alpha = 0.8f),
+                color = AuroraTokens.TextSecondary,
             )
 
             PlacePhotos(
@@ -137,7 +135,7 @@ fun PlaceInfoSheet(
                 if (showBack) {
                     OutlinedButton(
                         onClick = onBack,
-                        colors = ButtonDefaults.outlinedButtonColors(contentColor = GeminiBlue),
+                        colors = ButtonDefaults.outlinedButtonColors(contentColor = AuroraTokens.AccentCyan),
                     ) {
                         Icon(
                             imageVector = Icons.Filled.SkipPrevious,
@@ -148,7 +146,7 @@ fun PlaceInfoSheet(
                 if (onViewOnMap != null) {
                     OutlinedButton(
                         onClick = { onViewOnMap(); onDismiss() },
-                        colors = ButtonDefaults.outlinedButtonColors(contentColor = GeminiTeal),
+                        colors = ButtonDefaults.outlinedButtonColors(contentColor = AuroraTokens.AccentTeal),
                     ) {
                         Icon(
                             imageVector = Icons.Filled.Map,
@@ -163,7 +161,7 @@ fun PlaceInfoSheet(
                 Button(
                     onClick = onSkip,
                     modifier = Modifier.weight(1f),
-                    colors = ButtonDefaults.buttonColors(containerColor = GeminiBlue),
+                    colors = ButtonDefaults.buttonColors(containerColor = AuroraTokens.AccentCyan),
                 ) {
                     Icon(imageVector = Icons.Filled.SkipNext, contentDescription = null)
                     Text(

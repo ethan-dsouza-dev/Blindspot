@@ -28,7 +28,6 @@ import com.blindspot.app.ui.components.CompassColors
 import com.blindspot.app.ui.components.CompassView
 import com.blindspot.app.ui.components.PermissionGate
 import com.blindspot.app.ui.components.PlaceInfoSheet
-import com.blindspot.app.ui.components.aurora.AuroraBackground
 import com.blindspot.app.ui.components.aurora.AuroraPlaceBanner
 import com.blindspot.app.ui.discovery.DiscoveryUiState
 import com.blindspot.app.ui.discovery.DiscoveryViewModel
@@ -54,8 +53,7 @@ private val AuroraCompassColors = CompassColors(
  * Discovery landing screen: a permission-gated compass that points toward the nearest place,
  * with a tappable banner that opens a detail sheet (with skip-to-next).
  *
- * Styled with the "Midnight Aurora" design system: this screen draws its own opaque
- * [AuroraBackground] over the app-level Gemini gradient while the new system is evaluated.
+ * Styled with the "Midnight Aurora" design system.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -63,35 +61,34 @@ fun DiscoveryScreen(
     modifier: Modifier = Modifier,
     viewModel: DiscoveryViewModel = koinViewModel(),
 ) {
-    AuroraBackground(modifier = modifier.fillMaxSize()) {
-        PermissionGate(
-            onReady = { viewModel.start() },
-        ) {
-            LaunchedEffect(Unit) { viewModel.start() }
+    PermissionGate(
+        modifier = modifier,
+        onReady = { viewModel.start() },
+    ) {
+        LaunchedEffect(Unit) { viewModel.start() }
 
-            val state by viewModel.uiState.collectAsStateWithLifecycle()
-            var sheetVisible by remember { mutableStateOf(false) }
-            val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+        val state by viewModel.uiState.collectAsStateWithLifecycle()
+        var sheetVisible by remember { mutableStateOf(false) }
+        val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
-            DiscoveryContent(
-                state = state,
-                onBannerClick = { sheetVisible = true },
-                onRetry = viewModel::retry,
-                modifier = Modifier.fillMaxSize(),
+        DiscoveryContent(
+            state = state,
+            onBannerClick = { sheetVisible = true },
+            onRetry = viewModel::retry,
+            modifier = Modifier.fillMaxSize(),
+        )
+
+        val place = state.currentPlace
+        if (sheetVisible && place != null) {
+            PlaceInfoSheet(
+                place = place,
+                distanceLabel = state.distanceLabel,
+                sheetState = sheetState,
+                onDismiss = { sheetVisible = false },
+                onSkip = { viewModel.skipToNext() },
+                onBack = { viewModel.skipToPrevious() },
+                showBack = state.hasPrevious,
             )
-
-            val place = state.currentPlace
-            if (sheetVisible && place != null) {
-                PlaceInfoSheet(
-                    place = place,
-                    distanceLabel = state.distanceLabel,
-                    sheetState = sheetState,
-                    onDismiss = { sheetVisible = false },
-                    onSkip = { viewModel.skipToNext() },
-                    onBack = { viewModel.skipToPrevious() },
-                    showBack = state.hasPrevious,
-                )
-            }
         }
     }
 }
