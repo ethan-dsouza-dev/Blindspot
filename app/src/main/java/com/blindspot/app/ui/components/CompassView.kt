@@ -34,12 +34,31 @@ import com.blindspot.app.ui.theme.GeminiViolet
 import kotlin.math.min
 
 /**
+ * Color set for [CompassView]. Defaults reproduce the original Gemini glass styling; pass a
+ * custom instance (e.g. Aurora colors) to restyle the dial without touching other callers.
+ */
+data class CompassColors(
+    val needleColors: List<Color> = listOf(GeminiPink, GeminiViolet, GeminiBlue),
+    val dialFill: Color = Color.White.copy(alpha = 0.06f),
+    val dialStroke: Color = Color.White.copy(alpha = 0.18f),
+    val dialInnerStroke: Color = Color.White.copy(alpha = 0.10f),
+    val tickMajor: Color = Color.White.copy(alpha = 0.45f),
+    val tickMinor: Color = Color.White.copy(alpha = 0.18f),
+    val needleTail: Color = Color.White.copy(alpha = 0.25f),
+    val hub: Color = Color.White,
+    val hubInner: Color = GeminiViolet,
+    val distanceText: Color = Color.White,
+    val targetText: Color = Color.White.copy(alpha = 0.7f),
+)
+
+/**
  * Stateless, reusable compass dial that points its needle toward a target.
  *
  * @param rotationDegrees the needle rotation (clockwise) where the target lies relative to the
  *   top of the screen — typically `bearingToPlace - deviceHeading`.
  * @param distanceLabel optional short label rendered in the center (e.g. "320 m").
  * @param targetLabel optional secondary label rendered under the distance.
+ * @param colors color set for the dial, needle, and labels.
  */
 @Composable
 fun CompassView(
@@ -48,6 +67,7 @@ fun CompassView(
     size: Dp = 280.dp,
     distanceLabel: String? = null,
     targetLabel: String? = null,
+    colors: CompassColors = CompassColors(),
 ) {
     // Track an "unwrapped" target so the needle always turns the short way and never spins a
     // full circle across the 0/360 boundary. Each update nudges the accumulated target by the
@@ -68,15 +88,15 @@ fun CompassView(
         label = "needle",
     )
 
-    val needleBrush = remember {
-        Brush.verticalGradient(listOf(GeminiPink, GeminiViolet, GeminiBlue))
+    val needleBrush = remember(colors) {
+        Brush.verticalGradient(colors.needleColors)
     }
 
     Box(modifier = modifier.size(size), contentAlignment = Alignment.Center) {
         Canvas(modifier = Modifier.size(size)) {
-            drawDial()
+            drawDial(colors)
             rotate(degrees = animatedRotation, pivot = center) {
-                drawNeedle(needleBrush)
+                drawNeedle(needleBrush, colors)
             }
         }
 
@@ -93,14 +113,14 @@ fun CompassView(
                         text = distanceLabel,
                         style = MaterialTheme.typography.headlineSmall,
                         fontWeight = FontWeight.SemiBold,
-                        color = Color.White,
+                        color = colors.distanceText,
                     )
                 }
                 if (targetLabel != null) {
                     Text(
                         text = targetLabel,
                         style = MaterialTheme.typography.labelMedium,
-                        color = Color.White.copy(alpha = 0.7f),
+                        color = colors.targetText,
                     )
                 }
             }
@@ -108,22 +128,22 @@ fun CompassView(
     }
 }
 
-private fun DrawScope.drawDial() {
+private fun DrawScope.drawDial(colors: CompassColors) {
     val radius = min(size.width, size.height) / 2f
-    // Outer glass ring.
+    // Outer ring.
     drawCircle(
-        color = Color.White.copy(alpha = 0.06f),
+        color = colors.dialFill,
         radius = radius,
         center = center,
     )
     drawCircle(
-        color = Color.White.copy(alpha = 0.18f),
+        color = colors.dialStroke,
         radius = radius,
         center = center,
         style = Stroke(width = 2f),
     )
     drawCircle(
-        color = Color.White.copy(alpha = 0.10f),
+        color = colors.dialInnerStroke,
         radius = radius * 0.78f,
         center = center,
         style = Stroke(width = 1f),
@@ -141,7 +161,7 @@ private fun DrawScope.drawDial() {
         val endX = center.x + (inner * Math.sin(angle)).toFloat()
         val endY = center.y - (inner * Math.cos(angle)).toFloat()
         drawLine(
-            color = Color.White.copy(alpha = if (isMajor) 0.45f else 0.18f),
+            color = if (isMajor) colors.tickMajor else colors.tickMinor,
             start = Offset(startX, startY),
             end = Offset(endX, endY),
             strokeWidth = if (isMajor) 3f else 1.5f,
@@ -149,7 +169,7 @@ private fun DrawScope.drawDial() {
     }
 }
 
-private fun DrawScope.drawNeedle(brush: Brush) {
+private fun DrawScope.drawNeedle(brush: Brush, colors: CompassColors) {
     val radius = min(size.width, size.height) / 2f
     val needleLength = radius * 0.62f
     val needleHalfWidth = radius * 0.07f
@@ -170,12 +190,12 @@ private fun DrawScope.drawNeedle(brush: Brush) {
         lineTo(center.x + needleHalfWidth, center.y)
         close()
     }
-    drawPath(path = tail, color = Color.White.copy(alpha = 0.25f))
+    drawPath(path = tail, color = colors.needleTail)
 
     // Center hub.
-    drawCircle(color = Color.White, radius = needleHalfWidth * 0.9f, center = center)
+    drawCircle(color = colors.hub, radius = needleHalfWidth * 0.9f, center = center)
     drawCircle(
-        color = GeminiViolet,
+        color = colors.hubInner,
         radius = needleHalfWidth * 0.5f,
         center = center,
     )

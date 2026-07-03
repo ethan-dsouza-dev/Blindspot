@@ -21,7 +21,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.blindspot.app.R
 import com.blindspot.app.ui.feed.TrendingPlaceItem
-import com.blindspot.app.ui.theme.GeminiBlue
+import com.blindspot.app.ui.components.aurora.AuroraSurface
+import com.blindspot.app.ui.theme.AuroraTokens
 
 /**
  * Portrait frosted-glass card for the Trending Now section. Shows a place photo, name, distance
@@ -35,7 +36,7 @@ fun TrendingPlaceCard(
 ) {
     val place = item.place
 
-    GlassSurface(
+    AuroraSurface(
         modifier = modifier
             .width(160.dp)
             .height(220.dp),
@@ -66,20 +67,20 @@ fun TrendingPlaceCard(
                     text = place.name,
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.SemiBold,
-                    color = Color.White,
+                    color = AuroraTokens.TextPrimary,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
                 Text(
                     text = item.distanceLabel,
                     style = MaterialTheme.typography.labelSmall,
-                    color = GeminiBlue,
+                    color = AuroraTokens.AccentCyan,
                     modifier = Modifier.padding(top = 4.dp),
                 )
                 Text(
                     text = place.category.replaceFirstChar { it.uppercase() },
                     style = MaterialTheme.typography.labelSmall,
-                    color = Color.White.copy(alpha = 0.7f),
+                    color = AuroraTokens.TextSecondary,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                     modifier = Modifier.padding(top = 2.dp),

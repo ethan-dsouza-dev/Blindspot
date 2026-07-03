@@ -1,6 +1,7 @@
 package com.blindspot.app.ui.screens
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -15,13 +16,13 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.blindspot.app.ui.components.PlaceInfoSheet
 import com.blindspot.app.ui.components.TrendingNowSection
 import com.blindspot.app.ui.feed.TrendingPlaceItem
 import com.blindspot.app.ui.feed.dummyTrendingItems
+import com.blindspot.app.ui.theme.AuroraTokens
 
 /**
  * Feed tab. Currently hosts the Trending Now section (dummy data for design iteration).
@@ -44,13 +45,14 @@ fun FeedScreen(
             .fillMaxSize()
             .statusBarsPadding(),
         verticalArrangement = Arrangement.spacedBy(24.dp),
+        contentPadding = PaddingValues(bottom = 100.dp),
     ) {
         item {
             Text(
                 text = "Feed",
                 style = MaterialTheme.typography.headlineMedium,
                 fontWeight = FontWeight.Bold,
-                color = Color.White,
+                color = AuroraTokens.TextPrimary,
                 modifier = Modifier.padding(start = 20.dp, top = 16.dp, bottom = 4.dp),
             )
         }
