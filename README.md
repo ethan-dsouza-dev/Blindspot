@@ -47,7 +47,7 @@ com.blindspot.app
    │                            #   PlaceBanner, PlaceInfoSheet, PermissionGate
    ├─ discovery/                # DiscoveryViewModel + DiscoveryUiState
    ├─ screens/                  # DiscoveryScreen (+ Maps/Feed placeholders)
-   └─ theme/                    # Gemini color palette + theme
+   └─ theme/                    # Color palette + theme
 ```
 
 The compass math (`GeoUtils`) is framework-free and unit-tested. The needle uses an "unwrapped"

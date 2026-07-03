@@ -33,15 +33,16 @@ import org.maplibre.compose.location.mostAccurateBearing
 import org.maplibre.compose.location.rememberDefaultLocationProvider
 import org.maplibre.compose.location.rememberDefaultOrientationProvider
 import org.maplibre.compose.location.rememberUserLocationState
+import org.maplibre.compose.map.GestureOptions
 import org.maplibre.compose.map.MaplibreMap
 import org.maplibre.compose.map.MapOptions
 import org.maplibre.compose.map.OrnamentOptions
 import org.maplibre.compose.style.BaseStyle
 import org.maplibre.spatialk.geojson.Position
 
-private const val OPENFREEMAP_STYLE_URL = "https://tiles.openfreemap.org/styles/liberty"
+private const val OPENFREEMAP_STYLE_URL = "https://tiles.openfreemap.org/styles/fiord"
 private const val USER_ZOOM = 16.0
-private const val MAP_PITCH = 60.0
+private const val MAP_PITCH = 0.0
 
 private suspend fun centerOnUser(cameraState: CameraState, position: Position) {
     cameraState.animateTo(
@@ -87,7 +88,10 @@ fun MapsScreen(
                 modifier = Modifier.fillMaxSize(),
                 baseStyle = BaseStyle.Uri(OPENFREEMAP_STYLE_URL),
                 cameraState = cameraState,
-                options = MapOptions(ornamentOptions = OrnamentOptions.AllDisabled),
+                options = MapOptions(
+                    ornamentOptions = OrnamentOptions.AllDisabled,
+                    gestureOptions = GestureOptions(isTiltEnabled = false),
+                ),
             ) {
                 if (locationState != null) {
                     LocationPuck(
