@@ -3,9 +3,9 @@ package com.blindspot.app.ui.theme
 import androidx.compose.ui.graphics.Color
 
 /**
- * "Midnight Aurora" design tokens: deep slate base, a single cyan→teal accent, and solid
- * elevated surfaces (no translucent glass). Currently applied only to the Discovery screen
- * while the design system is being evaluated.
+ * "Midnight Aurora" design tokens — the single source of truth for color across the app.
+ * Deep slate base, one cyan accent used sparingly (needle, active states, CTAs), and solid
+ * elevated surfaces (no translucent glass).
  */
 object AuroraTokens {
 
@@ -21,11 +21,18 @@ object AuroraTokens {
     val AccentCyan = Color(0xFF22D3EE)
     val AccentTeal = Color(0xFF2DD4BF)
 
+    // Content rendered on top of an accent-filled surface (e.g. primary button labels).
+    val OnAccent = BaseDeep
+
     // Text.
     val TextPrimary = Color(0xFFEDF1F5)
     val TextSecondary = Color(0xFF8B96A5)
 
-    // Ratings / warnings.
+    // Semantic statuses.
+    val Positive = Color(0xFF4ADE80)
+    val Negative = Color(0xFFF87171)
+
+    // Ratings.
     val RatingStar = Color(0xFFF5C044)
 
     // Compass-specific.

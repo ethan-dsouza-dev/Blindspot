@@ -24,6 +24,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.blindspot.app.data.model.Place
 import com.blindspot.app.ui.theme.AuroraTokens
+import com.blindspot.app.util.categoryLabel
 
 /**
  * "Midnight Aurora" styled banner summarizing the current [place]: a solid elevated card with
@@ -75,7 +76,7 @@ fun AuroraPlaceBanner(
                     overflow = TextOverflow.Ellipsis,
                 )
                 Text(
-                    text = "$distanceLabel away · ${place.category.replaceFirstChar { it.uppercase() }}",
+                    text = "$distanceLabel away · ${place.categoryLabel}",
                     style = MaterialTheme.typography.bodySmall,
                     color = AuroraTokens.TextSecondary,
                     maxLines = 1,

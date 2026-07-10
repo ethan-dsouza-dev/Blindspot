@@ -12,6 +12,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import com.blindspot.app.data.model.Place
 import com.blindspot.app.navigation.Destination
 import com.blindspot.app.ui.components.FloatingNavPill
 import com.blindspot.app.ui.components.aurora.AuroraBackground
@@ -23,11 +24,22 @@ import com.blindspot.app.ui.screens.MapsScreen
 fun BlindspotApp() {
     var selected by rememberSaveable { mutableStateOf(Destination.Discovery) }
 
+    // The venue the map should guide the user to; set by "Take me there" from any detail sheet.
+    var mapTarget by remember { mutableStateOf<Place?>(null) }
+    val navigateToPlace: (Place) -> Unit = {
+        mapTarget = it
+        selected = Destination.Maps
+    }
+
     // Each screen is wrapped in movable content so its composition (and, for Maps, the native
     // MapLibre view) is preserved when we reorder the screens to keep the active one on top.
-    val mapsContent = remember { movableContentOf<Boolean> { active -> MapsScreen(isActive = active) } }
-    val discoveryContent = remember { movableContentOf { DiscoveryScreen() } }
-    val feedContent = remember { movableContentOf { FeedScreen(onNavigateToMaps = { selected = Destination.Maps }) } }
+    val mapsContent = remember {
+        movableContentOf<Boolean> { active ->
+            MapsScreen(isActive = active, targetPlace = mapTarget, onClearTarget = { mapTarget = null })
+        }
+    }
+    val discoveryContent = remember { movableContentOf { DiscoveryScreen(onNavigateToMaps = navigateToPlace) } }
+    val feedContent = remember { movableContentOf { FeedScreen(onNavigateToMaps = navigateToPlace) } }
 
     AuroraBackground(modifier = Modifier.fillMaxSize()) {
         Box(modifier = Modifier.fillMaxSize()) {

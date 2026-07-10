@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.material3.CircularProgressIndicator
@@ -24,7 +25,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.blindspot.app.ui.components.CompassColors
+import com.blindspot.app.data.model.Place
 import com.blindspot.app.ui.components.CompassView
 import com.blindspot.app.ui.components.PermissionGate
 import com.blindspot.app.ui.components.PlaceInfoSheet
@@ -33,21 +34,6 @@ import com.blindspot.app.ui.discovery.DiscoveryUiState
 import com.blindspot.app.ui.discovery.DiscoveryViewModel
 import com.blindspot.app.ui.theme.AuroraTokens
 import org.koin.androidx.compose.koinViewModel
-
-/** Compass color set for the "Midnight Aurora" design system. */
-private val AuroraCompassColors = CompassColors(
-    needleColors = listOf(AuroraTokens.AccentCyan, AuroraTokens.AccentTeal),
-    dialFill = AuroraTokens.CompassDialFill,
-    dialStroke = AuroraTokens.CompassDialStroke,
-    dialInnerStroke = AuroraTokens.CompassDialInnerStroke,
-    tickMajor = AuroraTokens.CompassTickMajor,
-    tickMinor = AuroraTokens.CompassTickMinor,
-    needleTail = AuroraTokens.CompassNeedleTail,
-    hub = AuroraTokens.CompassHub,
-    hubInner = AuroraTokens.CompassHubInner,
-    distanceText = AuroraTokens.TextPrimary,
-    targetText = AuroraTokens.TextSecondary,
-)
 
 /**
  * Discovery landing screen: a permission-gated compass that points toward the nearest place,
@@ -58,6 +44,7 @@ private val AuroraCompassColors = CompassColors(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DiscoveryScreen(
+    onNavigateToMaps: (Place) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: DiscoveryViewModel = koinViewModel(),
 ) {
@@ -74,6 +61,7 @@ fun DiscoveryScreen(
         DiscoveryContent(
             state = state,
             onBannerClick = { sheetVisible = true },
+            onSkip = viewModel::skipToNext,
             onRetry = viewModel::retry,
             modifier = Modifier.fillMaxSize(),
         )
@@ -88,6 +76,7 @@ fun DiscoveryScreen(
                 onSkip = { viewModel.skipToNext() },
                 onBack = { viewModel.skipToPrevious() },
                 showBack = state.hasPrevious,
+                onViewOnMap = { onNavigateToMaps(place) },
             )
         }
     }
@@ -97,27 +86,31 @@ fun DiscoveryScreen(
 private fun DiscoveryContent(
     state: DiscoveryUiState,
     onBannerClick: () -> Unit,
+    onSkip: () -> Unit,
     onRetry: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(
         modifier = modifier
             .statusBarsPadding()
-            .padding(horizontal = 24.dp),
+            .padding(horizontal = 20.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Text(
             text = "Discover",
-            style = MaterialTheme.typography.headlineMedium,
-            fontWeight = FontWeight.Bold,
+            style = MaterialTheme.typography.headlineLarge,
             color = AuroraTokens.TextPrimary,
-            modifier = Modifier.padding(top = 16.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 24.dp),
         )
         Text(
             text = "Pointing you to the nearest spot",
-            style = MaterialTheme.typography.bodyMedium,
+            style = MaterialTheme.typography.bodySmall,
             color = AuroraTokens.TextSecondary,
-            modifier = Modifier.padding(top = 4.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 4.dp),
         )
 
         Box(
@@ -141,8 +134,6 @@ private fun DiscoveryContent(
                 DiscoveryUiState.Status.Content -> CompassView(
                     rotationDegrees = state.needleRotation,
                     distanceLabel = state.distanceLabel.ifEmpty { null },
-                    targetLabel = state.currentPlace?.name,
-                    colors = AuroraCompassColors,
                 )
             }
         }
@@ -153,8 +144,17 @@ private fun DiscoveryContent(
                     place = place,
                     distanceLabel = state.distanceLabel,
                     onClick = onBannerClick,
-                    modifier = Modifier.padding(bottom = 100.dp),
                 )
+                TextButton(
+                    onClick = onSkip,
+                    modifier = Modifier.padding(top = 4.dp, bottom = 88.dp),
+                ) {
+                    Text(
+                        text = "Not feeling it? Next spot",
+                        style = MaterialTheme.typography.labelLarge,
+                        color = AuroraTokens.TextSecondary,
+                    )
+                }
             }
         }
     }

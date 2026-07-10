@@ -29,7 +29,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -39,7 +38,7 @@ import androidx.core.location.LocationManagerCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
-import com.blindspot.app.ui.theme.GeminiBlue
+import com.blindspot.app.ui.theme.AuroraTokens
 import com.google.android.gms.common.api.ResolvableApiException
 import com.google.android.gms.location.LocationRequest
 import com.google.android.gms.location.LocationServices
@@ -149,26 +148,29 @@ private fun LocationRationale(
         Icon(
             imageVector = icon,
             contentDescription = null,
-            tint = GeminiBlue,
+            tint = AuroraTokens.AccentCyan,
             modifier = Modifier.size(64.dp),
         )
         Text(
             text = title,
             style = MaterialTheme.typography.headlineSmall,
             fontWeight = FontWeight.Bold,
-            color = Color.White,
+            color = AuroraTokens.TextPrimary,
             modifier = Modifier.padding(top = 20.dp),
         )
         Text(
             text = body,
             style = MaterialTheme.typography.bodyMedium,
-            color = Color.White.copy(alpha = 0.75f),
+            color = AuroraTokens.TextSecondary,
             textAlign = TextAlign.Center,
             modifier = Modifier.padding(top = 8.dp, bottom = 28.dp),
         )
         Button(
             onClick = onRequest,
-            colors = ButtonDefaults.buttonColors(containerColor = GeminiBlue),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = AuroraTokens.AccentCyan,
+                contentColor = AuroraTokens.OnAccent,
+            ),
         ) {
             Text(buttonLabel, fontWeight = FontWeight.SemiBold)
         }

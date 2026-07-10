@@ -60,6 +60,7 @@ fun FloatingNavPill(
                     FloatingNavItem(
                         selected = selected == destination,
                         onClick = { onSelect(destination) },
+                        label = destination.label,
                         icon = {
                             Icon(
                                 imageVector = destination.icon,
@@ -79,6 +80,7 @@ fun FloatingNavPill(
 private fun RowScope.FloatingNavItem(
     selected: Boolean,
     onClick: () -> Unit,
+    label: String,
     icon: @Composable (tint: Color) -> Unit,
 ) {
     val tint by animateColorAsState(
@@ -87,7 +89,7 @@ private fun RowScope.FloatingNavItem(
         label = "navItemTint",
     )
 
-    Box(
+    Column(
         modifier = Modifier
             .weight(1f)
             .clickable(
@@ -96,8 +98,14 @@ private fun RowScope.FloatingNavItem(
                 onClick = onClick,
             )
             .padding(vertical = 8.dp),
-        contentAlignment = Alignment.Center,
+        horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         icon(tint)
+        Text(
+            text = label,
+            fontSize = 11.sp,
+            color = tint,
+            modifier = Modifier.padding(top = 2.dp),
+        )
     }
 }
