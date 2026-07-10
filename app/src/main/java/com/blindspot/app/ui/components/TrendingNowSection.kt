@@ -30,9 +30,8 @@ fun TrendingNowSection(
         Text(
             text = "Trending Now",
             style = MaterialTheme.typography.titleLarge,
-            fontWeight = FontWeight.Bold,
             color = AuroraTokens.TextPrimary,
-            modifier = Modifier.padding(start = 20.dp, top = 4.dp, bottom = 12.dp),
+            modifier = Modifier.padding(start = 20.dp, bottom = 12.dp),
         )
         LazyRow(
             contentPadding = PaddingValues(horizontal = 20.dp),

@@ -2,14 +2,20 @@ package com.blindspot.app.ui.screens
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.MyLocation
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -21,13 +27,20 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
-import com.blindspot.app.ui.components.aurora.AuroraSurface
+import com.blindspot.app.data.model.Place
 import com.blindspot.app.ui.components.PermissionGate
+import com.blindspot.app.ui.components.PlaceInfoSheet
+import com.blindspot.app.ui.components.aurora.AuroraPlaceBanner
+import com.blindspot.app.ui.components.aurora.AuroraSurface
 import com.blindspot.app.ui.theme.AuroraTokens
+import com.blindspot.app.util.GeoUtils
 import kotlinx.coroutines.launch
 import org.maplibre.compose.camera.CameraPosition
 import org.maplibre.compose.camera.CameraState
 import org.maplibre.compose.camera.rememberCameraState
+import org.maplibre.compose.expressions.dsl.const
+import org.maplibre.compose.layers.CircleLayer
+import org.maplibre.compose.layers.LineLayer
 import org.maplibre.compose.location.LocationPuck
 import org.maplibre.compose.location.mostAccurateBearing
 import org.maplibre.compose.location.rememberDefaultLocationProvider
@@ -37,8 +50,13 @@ import org.maplibre.compose.map.GestureOptions
 import org.maplibre.compose.map.MaplibreMap
 import org.maplibre.compose.map.MapOptions
 import org.maplibre.compose.map.OrnamentOptions
+import org.maplibre.compose.sources.GeoJsonData
+import org.maplibre.compose.sources.rememberGeoJsonSource
 import org.maplibre.compose.style.BaseStyle
+import org.maplibre.spatialk.geojson.LineString
+import org.maplibre.spatialk.geojson.Point
 import org.maplibre.spatialk.geojson.Position
+import kotlin.math.ln
 
 private const val OPENFREEMAP_STYLE_URL = "https://tiles.openfreemap.org/styles/fiord"
 private const val USER_ZOOM = 16.0
@@ -50,15 +68,40 @@ private suspend fun centerOnUser(cameraState: CameraState, position: Position) {
     )
 }
 
+/**
+ * Frames both the user and the destination: camera targets the midpoint at a zoom chosen so the
+ * full route fits comfortably on a phone viewport.
+ */
+private suspend fun frameRoute(cameraState: CameraState, user: Position, target: Position) {
+    val midpoint = Position(
+        longitude = (user.longitude + target.longitude) / 2.0,
+        latitude = (user.latitude + target.latitude) / 2.0,
+    )
+    val meters = GeoUtils.distanceMeters(
+        user.latitude, user.longitude,
+        target.latitude, target.longitude,
+    )
+    val zoom = (ln(20_000_000.0 / meters.coerceAtLeast(50.0)) / ln(2.0)).coerceIn(11.0, 17.0)
+    cameraState.animateTo(
+        CameraPosition(target = midpoint, zoom = zoom, tilt = MAP_PITCH),
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MapsScreen(
     modifier: Modifier = Modifier,
     isActive: Boolean = true,
+    targetPlace: Place? = null,
+    onClearTarget: () -> Unit = {},
 ) {
     PermissionGate(modifier = modifier) {
         val cameraState = rememberCameraState()
         val scope = rememberCoroutineScope()
         var hasCenteredOnUser by remember { mutableStateOf(false) }
+        var framedTargetId by remember { mutableStateOf<String?>(null) }
+        var sheetVisible by remember { mutableStateOf(false) }
+        val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
         // Only subscribe to location/orientation while the Maps tab is visible. The MaplibreMap
         // below stays composed (the native instance is never torn down), so switching tabs no
@@ -79,7 +122,18 @@ fun MapsScreen(
         LaunchedEffect(userPosition) {
             if (userPosition != null && !hasCenteredOnUser) {
                 hasCenteredOnUser = true
-                centerOnUser(cameraState, userPosition)
+                if (targetPlace == null) centerOnUser(cameraState, userPosition)
+            }
+        }
+
+        // When a destination is set (or changes), frame user + destination together — never
+        // open on the user with the destination off-screen.
+        LaunchedEffect(targetPlace?.id, userPosition != null) {
+            val target = targetPlace ?: return@LaunchedEffect
+            val user = userPosition ?: return@LaunchedEffect
+            if (framedTargetId != target.id) {
+                framedTargetId = target.id
+                frameRoute(cameraState, user, Position(target.longitude, target.latitude))
             }
         }
 
@@ -93,6 +147,42 @@ fun MapsScreen(
                     gestureOptions = GestureOptions(isTiltEnabled = false),
                 ),
             ) {
+                if (targetPlace != null) {
+                    val targetPosition = Position(targetPlace.longitude, targetPlace.latitude)
+
+                    // Straight guide line from the user to the destination.
+                    if (userPosition != null) {
+                        val routeSource = rememberGeoJsonSource(
+                            data = GeoJsonData.Features(
+                                LineString(listOf(userPosition, targetPosition)),
+                            ),
+                        )
+                        LineLayer(
+                            id = "route-line",
+                            source = routeSource,
+                            color = const(AuroraTokens.AccentCyan.copy(alpha = 0.8f)),
+                            width = const(3.dp),
+                        )
+                    }
+
+                    // Destination pin: accent dot with a dark ring so it reads on any tile.
+                    val destinationSource = rememberGeoJsonSource(
+                        data = GeoJsonData.Features(Point(targetPosition)),
+                    )
+                    CircleLayer(
+                        id = "destination-ring",
+                        source = destinationSource,
+                        color = const(AuroraTokens.BaseDeep),
+                        radius = const(11.dp),
+                    )
+                    CircleLayer(
+                        id = "destination-pin",
+                        source = destinationSource,
+                        color = const(AuroraTokens.AccentCyan),
+                        radius = const(7.dp),
+                    )
+                }
+
                 if (locationState != null) {
                     LocationPuck(
                         idPrefix = "user",
@@ -104,31 +194,103 @@ fun MapsScreen(
             }
 
             if (isActive) {
-                AuroraSurface(
-                    shape = CircleShape,
+                Column(
                     modifier = Modifier
-                        .align(Alignment.BottomEnd)
+                        .fillMaxWidth()
+                        .align(Alignment.BottomCenter)
                         .navigationBarsPadding()
-                        .padding(bottom = 100.dp, end = 24.dp)
-                        .size(56.dp)
-                        .clip(CircleShape)
-                        .clickable(enabled = userPosition != null) {
-                            userPosition?.let { scope.launch { centerOnUser(cameraState, it) } }
-                        },
+                        .padding(bottom = 96.dp),
                 ) {
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center,
+                    AuroraSurface(
+                        shape = CircleShape,
+                        modifier = Modifier
+                            .align(Alignment.End)
+                            .padding(end = 20.dp, bottom = 12.dp)
+                            .size(48.dp)
+                            .clip(CircleShape)
+                            .clickable(enabled = userPosition != null) {
+                                userPosition?.let { scope.launch { centerOnUser(cameraState, it) } }
+                            },
                     ) {
-                        Icon(
-                            imageVector = Icons.Filled.MyLocation,
-                            contentDescription = "Recenter map on my location",
-                            tint = AuroraTokens.AccentCyan,
-                            modifier = Modifier.size(24.dp),
-                        )
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Icon(
+                                imageVector = Icons.Filled.MyLocation,
+                                contentDescription = "Recenter map on my location",
+                                tint = AuroraTokens.AccentCyan,
+                                modifier = Modifier.size(22.dp),
+                            )
+                        }
+                    }
+
+                    if (targetPlace != null) {
+                        val liveDistanceLabel = userPosition?.let { user ->
+                            GeoUtils.formatDistance(
+                                GeoUtils.distanceMeters(
+                                    user.latitude, user.longitude,
+                                    targetPlace.latitude, targetPlace.longitude,
+                                ),
+                            )
+                        } ?: targetPlace.distanceMeters?.let(GeoUtils::formatDistance).orEmpty()
+
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 20.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            AuroraPlaceBanner(
+                                place = targetPlace,
+                                distanceLabel = liveDistanceLabel,
+                                onClick = { sheetVisible = true },
+                                modifier = Modifier.weight(1f),
+                            )
+                            AuroraSurface(
+                                shape = CircleShape,
+                                modifier = Modifier
+                                    .padding(start = 12.dp)
+                                    .size(44.dp)
+                                    .clip(CircleShape)
+                                    .clickable(onClick = onClearTarget),
+                            ) {
+                                Box(
+                                    modifier = Modifier.fillMaxSize(),
+                                    contentAlignment = Alignment.Center,
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Filled.Close,
+                                        contentDescription = "Clear destination",
+                                        tint = AuroraTokens.TextSecondary,
+                                        modifier = Modifier.size(20.dp),
+                                    )
+                                }
+                            }
+                        }
                     }
                 }
             }
+        }
+
+        if (sheetVisible && targetPlace != null) {
+            val sheetDistanceLabel = userPosition?.let { user ->
+                GeoUtils.formatDistance(
+                    GeoUtils.distanceMeters(
+                        user.latitude, user.longitude,
+                        targetPlace.latitude, targetPlace.longitude,
+                    ),
+                )
+            } ?: targetPlace.distanceMeters?.let(GeoUtils::formatDistance).orEmpty()
+
+            PlaceInfoSheet(
+                place = targetPlace,
+                distanceLabel = sheetDistanceLabel,
+                sheetState = sheetState,
+                onDismiss = { sheetVisible = false },
+                onBack = { sheetVisible = false },
+                showBack = false,
+            )
         }
     }
 }

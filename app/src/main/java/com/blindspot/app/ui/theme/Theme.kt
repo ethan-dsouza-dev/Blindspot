@@ -1,57 +1,40 @@
 package com.blindspot.app.ui.theme
 
-import android.app.Activity
-import android.os.Build
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
-import androidx.compose.material3.dynamicDarkColorScheme
-import androidx.compose.material3.dynamicLightColorScheme
-import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.platform.LocalContext
 
-private val DarkColorScheme = darkColorScheme(
-    primary = GeminiBlue,
-    secondary = GeminiViolet,
-    tertiary = GeminiPink,
-    background = BackgroundTop,
-    surface = BackgroundMid,
-    onPrimary = OnSurfacePrimary,
-    onSecondary = OnSurfacePrimary,
-    onTertiary = OnSurfacePrimary,
-    onBackground = OnSurfacePrimary,
-    onSurface = OnSurfacePrimary,
-    onSurfaceVariant = OnSurfaceSecondary,
-)
-
-private val LightColorScheme = lightColorScheme(
-    primary = Purple40,
-    secondary = PurpleGrey40,
-    tertiary = Pink40
+/**
+ * Single dark "Midnight Aurora" scheme built from [AuroraTokens]. The app is dark-only by
+ * design (night-out discovery product); dynamic color is intentionally disabled so the curated
+ * palette is preserved across devices.
+ */
+private val AuroraColorScheme = darkColorScheme(
+    primary = AuroraTokens.AccentCyan,
+    onPrimary = AuroraTokens.OnAccent,
+    secondary = AuroraTokens.AccentTeal,
+    onSecondary = AuroraTokens.OnAccent,
+    tertiary = AuroraTokens.AccentTeal,
+    onTertiary = AuroraTokens.OnAccent,
+    background = AuroraTokens.BaseDeep,
+    onBackground = AuroraTokens.TextPrimary,
+    surface = AuroraTokens.BaseSlate,
+    onSurface = AuroraTokens.TextPrimary,
+    surfaceVariant = AuroraTokens.SurfaceElevated,
+    onSurfaceVariant = AuroraTokens.TextSecondary,
+    outline = AuroraTokens.SurfaceBorder,
+    outlineVariant = AuroraTokens.SurfaceBorder,
+    error = AuroraTokens.Negative,
+    onError = AuroraTokens.OnAccent,
 )
 
 @Composable
 fun BlindspotTheme(
-    // The Gemini-style frosted glass UI is designed for dark; default to it.
-    darkTheme: Boolean = true,
-    // Disable dynamic color so the curated palette is preserved across devices.
-    dynamicColor: Boolean = false,
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) {
-    val colorScheme = when {
-        dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
-            val context = LocalContext.current
-            if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
-        }
-
-        darkTheme -> DarkColorScheme
-        else -> LightColorScheme
-    }
-
     MaterialTheme(
-        colorScheme = colorScheme,
+        colorScheme = AuroraColorScheme,
         typography = Typography,
-        content = content
+        content = content,
     )
 }

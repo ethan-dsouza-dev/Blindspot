@@ -5,11 +5,7 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.size
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -25,30 +21,28 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.rotate
+import androidx.compose.ui.text.TextMeasurer
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import com.blindspot.app.ui.theme.GeminiBlue
-import com.blindspot.app.ui.theme.GeminiPink
-import com.blindspot.app.ui.theme.GeminiViolet
+import androidx.compose.ui.unit.sp
+import com.blindspot.app.ui.theme.AuroraTokens
+import kotlin.math.abs
 import kotlin.math.min
 
-/**
- * Color set for [CompassView]. Defaults reproduce the original Gemini glass styling; pass a
- * custom instance (e.g. Aurora colors) to restyle the dial without touching other callers.
- */
 data class CompassColors(
-    val needleColors: List<Color> = listOf(GeminiPink, GeminiViolet, GeminiBlue),
-    val dialFill: Color = Color.White.copy(alpha = 0.06f),
-    val dialStroke: Color = Color.White.copy(alpha = 0.18f),
-    val dialInnerStroke: Color = Color.White.copy(alpha = 0.10f),
-    val tickMajor: Color = Color.White.copy(alpha = 0.45f),
-    val tickMinor: Color = Color.White.copy(alpha = 0.18f),
-    val needleTail: Color = Color.White.copy(alpha = 0.25f),
-    val hub: Color = Color.White,
-    val hubInner: Color = GeminiViolet,
-    val distanceText: Color = Color.White,
-    val targetText: Color = Color.White.copy(alpha = 0.7f),
+    val needleColors: List<Color> = listOf(AuroraTokens.AccentCyan, AuroraTokens.AccentTeal),
+    val dialFill: Color = AuroraTokens.CompassDialFill,
+    val dialStroke: Color = AuroraTokens.CompassDialStroke,
+    val dialInnerStroke: Color = AuroraTokens.CompassDialInnerStroke,
+    val tickMajor: Color = AuroraTokens.CompassTickMajor,
+    val tickMinor: Color = AuroraTokens.CompassTickMinor,
+    val needleTail: Color = AuroraTokens.CompassNeedleTail,
+    val hub: Color = AuroraTokens.CompassHub,
+    val hubInner: Color = AuroraTokens.CompassHubInner,
 )
 
 /**
@@ -56,8 +50,6 @@ data class CompassColors(
  *
  * @param rotationDegrees the needle rotation (clockwise) where the target lies relative to the
  *   top of the screen — typically `bearingToPlace - deviceHeading`.
- * @param distanceLabel optional short label rendered in the center (e.g. "320 m").
- * @param targetLabel optional secondary label rendered under the distance.
  * @param colors color set for the dial, needle, and labels.
  */
 @Composable
@@ -65,8 +57,6 @@ fun CompassView(
     rotationDegrees: Float,
     modifier: Modifier = Modifier,
     size: Dp = 280.dp,
-    distanceLabel: String? = null,
-    targetLabel: String? = null,
     colors: CompassColors = CompassColors(),
 ) {
     // Track an "unwrapped" target so the needle always turns the short way and never spins a
@@ -88,43 +78,38 @@ fun CompassView(
         label = "needle",
     )
 
+    // "Locked on": the needle points (almost) straight ahead. Fades a glow in behind the tip so
+    // the user gets a quiet confirmation they're walking the right way.
+    val headingError = ((animatedRotation % 360f) + 540f) % 360f - 180f
+    val lockedOn = abs(headingError) <= 10f
+    val glowAlpha by animateFloatAsState(
+        targetValue = if (lockedOn) 0.25f else 0f,
+        label = "lockGlow",
+    )
+
     val needleBrush = remember(colors) {
         Brush.verticalGradient(colors.needleColors)
     }
 
+    val textMeasurer = rememberTextMeasurer()
+    val cardinalStyle = TextStyle(
+        fontSize = 12.sp,
+        fontWeight = FontWeight.Medium,
+        color = colors.tickMajor,
+    )
+
     Box(modifier = modifier.size(size), contentAlignment = Alignment.Center) {
         Canvas(modifier = Modifier.size(size)) {
             drawDial(colors)
+            drawCardinals(textMeasurer, cardinalStyle)
             rotate(degrees = animatedRotation, pivot = center) {
+                if (glowAlpha > 0.01f) {
+                    drawNeedleGlow(colors, glowAlpha)
+                }
                 drawNeedle(needleBrush, colors)
             }
         }
 
-        // Labels live in the bottom half of the dial, centered around the ~3/4 height point.
-        if (distanceLabel != null || targetLabel != null) {
-            Column(
-                modifier = Modifier
-                    .align(Alignment.Center)
-                    .offset(y = size / 4),
-                horizontalAlignment = Alignment.CenterHorizontally,
-            ) {
-                if (distanceLabel != null) {
-                    Text(
-                        text = distanceLabel,
-                        style = MaterialTheme.typography.headlineSmall,
-                        fontWeight = FontWeight.SemiBold,
-                        color = colors.distanceText,
-                    )
-                }
-                if (targetLabel != null) {
-                    Text(
-                        text = targetLabel,
-                        style = MaterialTheme.typography.labelMedium,
-                        color = colors.targetText,
-                    )
-                }
-            }
-        }
     }
 }
 
@@ -149,11 +134,11 @@ private fun DrawScope.drawDial(colors: CompassColors) {
         style = Stroke(width = 1f),
     )
 
-    // Tick marks around the dial.
-    val tickCount = 60
+    // Tick marks around the dial: minor every 15°, major every 45°.
+    val tickCount = 24
     for (i in 0 until tickCount) {
         val angle = Math.toRadians((i * 360.0 / tickCount))
-        val isMajor = i % 5 == 0
+        val isMajor = i % 3 == 0
         val outer = radius
         val inner = radius - if (isMajor) 18f else 9f
         val startX = center.x + (outer * Math.sin(angle)).toFloat()
@@ -167,6 +152,36 @@ private fun DrawScope.drawDial(colors: CompassColors) {
             strokeWidth = if (isMajor) 3f else 1.5f,
         )
     }
+}
+
+/** N/E/S/W letters just inside the tick ring. The dial is screen-fixed, so N = device-up. */
+private fun DrawScope.drawCardinals(textMeasurer: TextMeasurer, style: TextStyle) {
+    val radius = min(size.width, size.height) / 2f
+    val labelRadius = radius * 0.85f
+    val cardinals = listOf("N" to 0.0, "E" to 90.0, "S" to 180.0, "W" to 270.0)
+    cardinals.forEach { (label, degrees) ->
+        val angle = Math.toRadians(degrees)
+        val layout = textMeasurer.measure(label, style)
+        val x = center.x + (labelRadius * Math.sin(angle)).toFloat() - layout.size.width / 2f
+        val y = center.y - (labelRadius * Math.cos(angle)).toFloat() - layout.size.height / 2f
+        drawText(layout, topLeft = Offset(x, y))
+    }
+}
+
+/** Soft accent glow behind the needle tip, shown only when locked onto the target heading. */
+private fun DrawScope.drawNeedleGlow(colors: CompassColors, alpha: Float) {
+    val radius = min(size.width, size.height) / 2f
+    val tip = Offset(center.x, center.y - radius * 0.62f)
+    val glowColor = colors.needleColors.first()
+    drawCircle(
+        brush = Brush.radialGradient(
+            colors = listOf(glowColor.copy(alpha = alpha), Color.Transparent),
+            center = tip,
+            radius = radius * 0.28f,
+        ),
+        radius = radius * 0.28f,
+        center = tip,
+    )
 }
 
 private fun DrawScope.drawNeedle(brush: Brush, colors: CompassColors) {
