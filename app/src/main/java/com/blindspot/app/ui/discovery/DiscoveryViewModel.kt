@@ -78,7 +78,7 @@ class DiscoveryViewModel(
                 .debounce(RADIUS_DEBOUNCE_MS)
                 .collectLatest {
                     val location = lastLocation ?: return@collectLatest
-                    loadPlaces(location)
+                    loadPlaces(location, isRefresh = true)
                 }
         }
     }
@@ -110,9 +110,19 @@ class DiscoveryViewModel(
         recomputeCompass()
     }
 
-    private fun loadPlaces(location: Location) {
+    /**
+     * Loads places for [location] and the current radius.
+     *
+     * When [isRefresh] is true (e.g. a slider-driven radius change) the existing content stays
+     * mounted: we do not flip to [DiscoveryUiState.Status.Loading] on entry, and a failure keeps
+     * the current results on screen rather than blanking to the error state. Only the initial
+     * load and manual retry (isRefresh = false) show the full-screen loading/error UI.
+     */
+    private fun loadPlaces(location: Location, isRefresh: Boolean = false) {
         viewModelScope.launch {
-            _uiState.update { it.copy(status = DiscoveryUiState.Status.Loading) }
+            if (!isRefresh) {
+                _uiState.update { it.copy(status = DiscoveryUiState.Status.Loading) }
+            }
             placeRepository.getNearbyPlaces(
                 location.latitude,
                 location.longitude,
@@ -133,6 +143,9 @@ class DiscoveryViewModel(
                     recomputeCompass()
                 }
                 .onFailure { error ->
+                    // On a silent refresh, keep the current content visible instead of
+                    // replacing it with the full-screen error state.
+                    if (isRefresh) return@onFailure
                     placesLoaded = false // allow retry to reload
                     _uiState.update {
                         it.copy(
@@ -191,7 +204,6 @@ class DiscoveryViewModel(
     }
 
     private companion object {
-        /** How long the user must stop sliding before we requery, in milliseconds. */
         const val RADIUS_DEBOUNCE_MS = 350L
     }
 }
