@@ -29,6 +29,7 @@ import com.blindspot.app.data.model.Place
 import com.blindspot.app.ui.components.CompassView
 import com.blindspot.app.ui.components.PermissionGate
 import com.blindspot.app.ui.components.PlaceInfoSheet
+import com.blindspot.app.ui.components.RadiusSlider
 import com.blindspot.app.ui.components.aurora.AuroraPlaceBanner
 import com.blindspot.app.ui.discovery.DiscoveryUiState
 import com.blindspot.app.ui.discovery.DiscoveryViewModel
@@ -57,6 +58,7 @@ fun DiscoveryScreen(
             onBannerClick = { sheetVisible = true },
             onSkip = viewModel::skipToNext,
             onRetry = viewModel::retry,
+            onRadiusChange = viewModel::setRadius,
             modifier = Modifier.fillMaxSize(),
         )
 
@@ -82,6 +84,7 @@ private fun DiscoveryContent(
     onBannerClick: () -> Unit,
     onSkip: () -> Unit,
     onRetry: () -> Unit,
+    onRadiusChange: (Int) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(
@@ -141,6 +144,20 @@ private fun DiscoveryContent(
                     }
                 }
             }
+        }
+
+        if (state.status == DiscoveryUiState.Status.Content ||
+            state.status == DiscoveryUiState.Status.Empty
+        ) {
+            RadiusSlider(
+                radiusMeters = state.radiusMeters,
+                onRadiusChange = onRadiusChange,
+                modifier = Modifier.padding(
+                    top = 8.dp,
+                    // Clear the floating nav pill when no banner follows the slider.
+                    bottom = if (state.status == DiscoveryUiState.Status.Empty) 88.dp else 0.dp,
+                ),
+            )
         }
 
         state.currentPlace?.let { place ->

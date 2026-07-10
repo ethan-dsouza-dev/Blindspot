@@ -16,8 +16,9 @@ class NetworkPlaceRepository(
     override suspend fun getNearbyPlaces(
         latitude: Double,
         longitude: Double,
+        radiusMeters: Int,
         category: String,
     ): Result<List<Place>> = runCatching {
-        nearestPlacesService.nearby(latitude, longitude)
+        nearestPlacesService.nearby(latitude, longitude, radiusMeters)
     }
 }

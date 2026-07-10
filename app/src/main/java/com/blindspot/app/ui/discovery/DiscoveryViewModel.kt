@@ -8,9 +8,13 @@ import com.blindspot.app.data.repository.PlaceRepository
 import com.blindspot.app.location.LocationProvider
 import com.blindspot.app.sensor.CompassSensorManager
 import com.blindspot.app.util.GeoUtils
+import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.debounce
+import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
@@ -29,6 +33,10 @@ class DiscoveryViewModel(
     private val _uiState = MutableStateFlow(DiscoveryUiState())
     val uiState: StateFlow<DiscoveryUiState> = _uiState.asStateFlow()
 
+    /** Latest slider radius. Reloads are debounced off this stream so we query once the
+     * user stops sliding rather than on every intermediate value. */
+    private val radiusMeters = MutableStateFlow(_uiState.value.radiusMeters)
+
     private var lastLocation: Location? = null
     private var deviceHeading: Float = 0f
     private var started = false
@@ -45,6 +53,34 @@ class DiscoveryViewModel(
         _uiState.update { it.copy(status = DiscoveryUiState.Status.Loading) }
         observeHeading()
         observeLocation()
+        observeRadius()
+    }
+
+    /**
+     * Sets the search radius from the slider, clamped to the supported range. The value is
+     * reflected in the UI immediately; the actual reload is debounced (see [observeRadius]).
+     */
+    fun setRadius(meters: Int) {
+        val clamped = meters.coerceIn(
+            PlaceRepository.MIN_RADIUS_METERS,
+            PlaceRepository.MAX_RADIUS_METERS,
+        )
+        if (clamped == _uiState.value.radiusMeters) return
+        _uiState.update { it.copy(radiusMeters = clamped) }
+        radiusMeters.value = clamped
+    }
+
+    @OptIn(FlowPreview::class)
+    private fun observeRadius() {
+        viewModelScope.launch {
+            // drop(1) skips the initial value; the first load happens on the location fix.
+            radiusMeters.drop(1)
+                .debounce(RADIUS_DEBOUNCE_MS)
+                .collectLatest {
+                    val location = lastLocation ?: return@collectLatest
+                    loadPlaces(location)
+                }
+        }
     }
 
     private fun observeHeading() {
@@ -77,7 +113,11 @@ class DiscoveryViewModel(
     private fun loadPlaces(location: Location) {
         viewModelScope.launch {
             _uiState.update { it.copy(status = DiscoveryUiState.Status.Loading) }
-            placeRepository.getNearbyPlaces(location.latitude, location.longitude)
+            placeRepository.getNearbyPlaces(
+                location.latitude,
+                location.longitude,
+                _uiState.value.radiusMeters,
+            )
                 .onSuccess { places ->
                     _uiState.update {
                         it.copy(
@@ -148,5 +188,10 @@ class DiscoveryViewModel(
                 distanceLabel = GeoUtils.formatDistance(distance),
             )
         }
+    }
+
+    private companion object {
+        /** How long the user must stop sliding before we requery, in milliseconds. */
+        const val RADIUS_DEBOUNCE_MS = 350L
     }
 }

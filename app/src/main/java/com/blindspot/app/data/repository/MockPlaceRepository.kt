@@ -15,6 +15,7 @@ class MockPlaceRepository : PlaceRepository {
     override suspend fun getNearbyPlaces(
         latitude: Double,
         longitude: Double,
+        radiusMeters: Int,
         category: String,
     ): Result<List<Place>> = runCatching {
         // Simulate network latency.
@@ -34,6 +35,8 @@ class MockPlaceRepository : PlaceRepository {
                 rating = offset.rating,
                 priceLevel = offset.priceLevel,
             )
+        }.filter { place ->
+            GeoUtils.distanceMeters(latitude, longitude, place.latitude, place.longitude) <= radiusMeters
         }.sortedBy { place ->
             GeoUtils.distanceMeters(latitude, longitude, place.latitude, place.longitude)
         }
