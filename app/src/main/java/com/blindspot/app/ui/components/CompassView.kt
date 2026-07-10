@@ -5,11 +5,7 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.size
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -37,10 +33,6 @@ import com.blindspot.app.ui.theme.AuroraTokens
 import kotlin.math.abs
 import kotlin.math.min
 
-/**
- * Color set for [CompassView]. Defaults use the "Midnight Aurora" tokens; pass a custom
- * instance to restyle the dial without touching other callers.
- */
 data class CompassColors(
     val needleColors: List<Color> = listOf(AuroraTokens.AccentCyan, AuroraTokens.AccentTeal),
     val dialFill: Color = AuroraTokens.CompassDialFill,
@@ -51,8 +43,6 @@ data class CompassColors(
     val needleTail: Color = AuroraTokens.CompassNeedleTail,
     val hub: Color = AuroraTokens.CompassHub,
     val hubInner: Color = AuroraTokens.CompassHubInner,
-    val distanceText: Color = AuroraTokens.TextPrimary,
-    val targetText: Color = AuroraTokens.TextSecondary,
 )
 
 /**
@@ -60,8 +50,6 @@ data class CompassColors(
  *
  * @param rotationDegrees the needle rotation (clockwise) where the target lies relative to the
  *   top of the screen — typically `bearingToPlace - deviceHeading`.
- * @param distanceLabel optional short label rendered in the center (e.g. "320 m").
- * @param targetLabel optional secondary label rendered under the distance.
  * @param colors color set for the dial, needle, and labels.
  */
 @Composable
@@ -69,8 +57,6 @@ fun CompassView(
     rotationDegrees: Float,
     modifier: Modifier = Modifier,
     size: Dp = 280.dp,
-    distanceLabel: String? = null,
-    targetLabel: String? = null,
     colors: CompassColors = CompassColors(),
 ) {
     // Track an "unwrapped" target so the needle always turns the short way and never spins a
@@ -124,30 +110,6 @@ fun CompassView(
             }
         }
 
-        // Labels live in the bottom half of the dial, centered around the ~3/4 height point.
-        if (distanceLabel != null || targetLabel != null) {
-            Column(
-                modifier = Modifier
-                    .align(Alignment.Center)
-                    .offset(y = size / 4),
-                horizontalAlignment = Alignment.CenterHorizontally,
-            ) {
-                if (distanceLabel != null) {
-                    Text(
-                        text = distanceLabel,
-                        style = MaterialTheme.typography.displayMedium,
-                        color = colors.distanceText,
-                    )
-                }
-                if (targetLabel != null) {
-                    Text(
-                        text = targetLabel,
-                        style = MaterialTheme.typography.labelMedium,
-                        color = colors.targetText,
-                    )
-                }
-            }
-        }
     }
 }
 

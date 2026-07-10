@@ -196,6 +196,7 @@ fun MapsScreen(
             if (isActive) {
                 Column(
                     modifier = Modifier
+                        .fillMaxWidth()
                         .align(Alignment.BottomCenter)
                         .navigationBarsPadding()
                         .padding(bottom = 96.dp),

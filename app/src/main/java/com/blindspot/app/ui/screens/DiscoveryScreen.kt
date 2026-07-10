@@ -35,12 +35,6 @@ import com.blindspot.app.ui.discovery.DiscoveryViewModel
 import com.blindspot.app.ui.theme.AuroraTokens
 import org.koin.androidx.compose.koinViewModel
 
-/**
- * Discovery landing screen: a permission-gated compass that points toward the nearest place,
- * with a tappable banner that opens a detail sheet (with skip-to-next).
- *
- * Styled with the "Midnight Aurora" design system.
- */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DiscoveryScreen(
@@ -131,10 +125,21 @@ private fun DiscoveryContent(
                     actionLabel = "Retry",
                     onAction = onRetry,
                 )
-                DiscoveryUiState.Status.Content -> CompassView(
-                    rotationDegrees = state.needleRotation,
-                    distanceLabel = state.distanceLabel.ifEmpty { null },
-                )
+                DiscoveryUiState.Status.Content -> Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ) {
+                    CompassView(rotationDegrees = state.needleRotation)
+                    if (state.distanceLabel.isNotEmpty()) {
+                        Text(
+                            text = state.distanceLabel,
+                            style = MaterialTheme.typography.headlineMedium.copy(
+                                fontFeatureSettings = "tnum",
+                            ),
+                            color = AuroraTokens.TextPrimary,
+                            modifier = Modifier.padding(top = 24.dp),
+                        )
+                    }
+                }
             }
         }
 
