@@ -120,14 +120,20 @@ class DiscoveryViewModel(
      */
     private fun loadPlaces(location: Location, isRefresh: Boolean = false) {
         viewModelScope.launch {
-            if (!isRefresh) {
+            if (isRefresh) {
+                _uiState.update { it.copy(isRefreshing = true) }
+            } else {
                 _uiState.update { it.copy(status = DiscoveryUiState.Status.Loading) }
             }
-            placeRepository.getNearbyPlaces(
+            val result = placeRepository.getNearbyPlaces(
                 location.latitude,
                 location.longitude,
                 _uiState.value.radiusMeters,
             )
+            if (isRefresh) {
+                _uiState.update { it.copy(isRefreshing = false) }
+            }
+            result
                 .onSuccess { places ->
                     _uiState.update {
                         it.copy(
@@ -178,6 +184,17 @@ class DiscoveryViewModel(
         val location = lastLocation ?: return
         placesLoaded = true
         loadPlaces(location)
+    }
+
+    /**
+     * User-initiated refresh. Re-queries places against the latest known location and current
+     * radius, keeping the existing results on screen while the request is in flight. No-ops when
+     * there is no location fix yet or a reload is already running.
+     */
+    fun refresh() {
+        val location = lastLocation ?: return
+        if (_uiState.value.isRefreshing) return
+        loadPlaces(location, isRefresh = true)
     }
 
     private fun recomputeCompass() {

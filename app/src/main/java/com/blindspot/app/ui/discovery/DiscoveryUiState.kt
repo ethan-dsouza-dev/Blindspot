@@ -16,6 +16,8 @@ data class DiscoveryUiState(
     val needleRotation: Float = 0f,
     /** Distance to the current place, pre-formatted for display (e.g. "320 m"). */
     val distanceLabel: String = "",
+    /** True while a silent reload (manual refresh or radius change) is in flight. */
+    val isRefreshing: Boolean = false,
     val errorMessage: String? = null,
 ) {
     val currentPlace: Place? get() = places.getOrNull(currentIndex)
