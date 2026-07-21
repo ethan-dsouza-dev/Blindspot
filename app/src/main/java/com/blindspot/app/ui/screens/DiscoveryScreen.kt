@@ -3,12 +3,18 @@ package com.blindspot.app.ui.screens
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -59,6 +65,7 @@ fun DiscoveryScreen(
             onSkip = viewModel::skipToNext,
             onRetry = viewModel::retry,
             onRadiusChange = viewModel::setRadius,
+            onRefresh = viewModel::refresh,
             modifier = Modifier.fillMaxSize(),
         )
 
@@ -85,6 +92,7 @@ private fun DiscoveryContent(
     onSkip: () -> Unit,
     onRetry: () -> Unit,
     onRadiusChange: (Int) -> Unit,
+    onRefresh: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(
@@ -93,22 +101,48 @@ private fun DiscoveryContent(
             .padding(horizontal = 20.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Text(
-            text = "Discover",
-            style = MaterialTheme.typography.headlineLarge,
-            color = AuroraTokens.TextPrimary,
+        Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(top = 24.dp),
-        )
-        Text(
-            text = "Pointing you to the nearest spot",
-            style = MaterialTheme.typography.bodySmall,
-            color = AuroraTokens.TextSecondary,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 4.dp),
-        )
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = "Discover",
+                    style = MaterialTheme.typography.headlineLarge,
+                    color = AuroraTokens.TextPrimary,
+                )
+                Text(
+                    text = "Pointing you to the nearest spot",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = AuroraTokens.TextSecondary,
+                    modifier = Modifier.padding(top = 4.dp),
+                )
+            }
+            if (state.status == DiscoveryUiState.Status.Content ||
+                state.status == DiscoveryUiState.Status.Empty
+            ) {
+                IconButton(
+                    onClick = onRefresh,
+                    enabled = !state.isRefreshing,
+                ) {
+                    if (state.isRefreshing) {
+                        CircularProgressIndicator(
+                            color = AuroraTokens.AccentCyan,
+                            strokeWidth = 2.dp,
+                            modifier = Modifier.size(20.dp),
+                        )
+                    } else {
+                        Icon(
+                            imageVector = Icons.Filled.Refresh,
+                            contentDescription = "Refresh results",
+                            tint = AuroraTokens.TextPrimary,
+                        )
+                    }
+                }
+            }
+        }
 
         Box(
             modifier = Modifier
