@@ -16,6 +16,7 @@ class MockPlaceRepository : PlaceRepository {
         latitude: Double,
         longitude: Double,
         radiusMeters: Int,
+        priceLevel: Int?,
         category: String,
     ): Result<List<Place>> = runCatching {
         // Simulate network latency.
@@ -36,7 +37,8 @@ class MockPlaceRepository : PlaceRepository {
                 priceLevel = offset.priceLevel,
             )
         }.filter { place ->
-            GeoUtils.distanceMeters(latitude, longitude, place.latitude, place.longitude) <= radiusMeters
+            (priceLevel == null || place.priceLevel == priceLevel) &&
+                GeoUtils.distanceMeters(latitude, longitude, place.latitude, place.longitude) <= radiusMeters
         }.sortedBy { place ->
             GeoUtils.distanceMeters(latitude, longitude, place.latitude, place.longitude)
         }

@@ -17,8 +17,9 @@ class NetworkPlaceRepository(
         latitude: Double,
         longitude: Double,
         radiusMeters: Int,
+        priceLevel: Int?,
         category: String,
     ): Result<List<Place>> = runCatching {
-        nearestPlacesService.nearby(latitude, longitude, radiusMeters)
+        nearestPlacesService.nearby(latitude, longitude, radiusMeters, priceLevel)
     }
 }

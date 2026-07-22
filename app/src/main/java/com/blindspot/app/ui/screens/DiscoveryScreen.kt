@@ -35,6 +35,7 @@ import com.blindspot.app.data.model.Place
 import com.blindspot.app.ui.components.CompassView
 import com.blindspot.app.ui.components.PermissionGate
 import com.blindspot.app.ui.components.PlaceInfoSheet
+import com.blindspot.app.ui.components.PriceFilterDropdown
 import com.blindspot.app.ui.components.RadiusSlider
 import com.blindspot.app.ui.components.aurora.AuroraPlaceBanner
 import com.blindspot.app.ui.discovery.DiscoveryUiState
@@ -65,6 +66,7 @@ fun DiscoveryScreen(
             onSkip = viewModel::skipToNext,
             onRetry = viewModel::retry,
             onRadiusChange = viewModel::setRadius,
+            onPriceChange = viewModel::setPriceLevel,
             onRefresh = viewModel::refresh,
             modifier = Modifier.fillMaxSize(),
         )
@@ -92,6 +94,7 @@ private fun DiscoveryContent(
     onSkip: () -> Unit,
     onRetry: () -> Unit,
     onRadiusChange: (Int) -> Unit,
+    onPriceChange: (Int?) -> Unit,
     onRefresh: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -183,6 +186,11 @@ private fun DiscoveryContent(
         if (state.status == DiscoveryUiState.Status.Content ||
             state.status == DiscoveryUiState.Status.Empty
         ) {
+            PriceFilterDropdown(
+                priceLevel = state.priceLevel,
+                onPriceChange = onPriceChange,
+                modifier = Modifier.padding(top = 8.dp),
+            )
             RadiusSlider(
                 radiusMeters = state.radiusMeters,
                 onRadiusChange = onRadiusChange,
