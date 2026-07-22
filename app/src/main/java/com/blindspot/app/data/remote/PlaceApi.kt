@@ -6,7 +6,7 @@ import retrofit2.http.Query
 /**
  * Retrofit definition for the bars-nearby endpoint.
  *
- * Maps to `GET /bars/nearby?lat=&lng=&radius=` on the Blindspot backend.
+ * Maps to `GET /bars/nearby?lat=&lng=&radius=&priceLevel=` on the Blindspot backend.
  */
 interface PlaceApi {
 
@@ -15,5 +15,6 @@ interface PlaceApi {
         @Query("lat") latitude: Double,
         @Query("lng") longitude: Double,
         @Query("radius") radiusMeters: Int,
+        @Query("priceLevel") priceLevel: Int?,
     ): List<PlaceDto>
 }

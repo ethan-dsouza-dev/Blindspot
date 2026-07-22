@@ -11,15 +11,17 @@ class NearestPlacesService(
 ) {
 
     /**
-     * Returns the places near [latitude]/[longitude] within [radiusMeters], nearest-first as
-     * ordered by the backend. Network/parsing failures propagate to the caller.
+     * Returns the places near [latitude]/[longitude] within [radiusMeters] and matching
+     * [priceLevel] (1..4), nearest-first as ordered by the backend. Network/parsing failures
+     * propagate to the caller.
      */
     suspend fun nearby(
         latitude: Double,
         longitude: Double,
         radiusMeters: Int = DEFAULT_RADIUS_METERS,
+        priceLevel: Int?,
     ): List<Place> =
-        api.getNearbyPlaces(latitude, longitude, radiusMeters)
+        api.getNearbyPlaces(latitude, longitude, radiusMeters, priceLevel)
             .map { it.toDomain() }
 
     companion object {

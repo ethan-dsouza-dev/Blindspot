@@ -37,6 +37,10 @@ class DiscoveryViewModel(
      * user stops sliding rather than on every intermediate value. */
     private val radiusMeters = MutableStateFlow(_uiState.value.radiusMeters)
 
+    /** Latest selected price point. Reloads are debounced off this stream, mirroring
+     * [radiusMeters], so rapid selections coalesce into a single query. */
+    private val priceLevel = MutableStateFlow(_uiState.value.priceLevel)
+
     private var lastLocation: Location? = null
     private var deviceHeading: Float = 0f
     private var started = false
@@ -54,6 +58,7 @@ class DiscoveryViewModel(
         observeHeading()
         observeLocation()
         observeRadius()
+        observePriceLevel()
     }
 
     /**
@@ -76,6 +81,34 @@ class DiscoveryViewModel(
             // drop(1) skips the initial value; the first load happens on the location fix.
             radiusMeters.drop(1)
                 .debounce(RADIUS_DEBOUNCE_MS)
+                .collectLatest {
+                    val location = lastLocation ?: return@collectLatest
+                    loadPlaces(location, isRefresh = true)
+                }
+        }
+    }
+
+    /**
+     * Sets the price point from the dropdown. [level] = null clears the filter ("Any").
+     * Non-null values are clamped to 1..4. Reflected in the UI immediately; the actual reload
+     * is debounced (see [observePriceLevel]).
+     */
+    fun setPriceLevel(level: Int?) {
+        val clamped = level?.coerceIn(
+            PlaceRepository.MIN_PRICE_LEVEL,
+            PlaceRepository.MAX_PRICE_LEVEL,
+        )
+        if (clamped == _uiState.value.priceLevel) return
+        _uiState.update { it.copy(priceLevel = clamped) }
+        priceLevel.value = clamped
+    }
+
+    @OptIn(FlowPreview::class)
+    private fun observePriceLevel() {
+        viewModelScope.launch {
+            // drop(1) skips the initial value; the first load happens on the location fix.
+            priceLevel.drop(1)
+                .debounce(PRICE_DEBOUNCE_MS)
                 .collectLatest {
                     val location = lastLocation ?: return@collectLatest
                     loadPlaces(location, isRefresh = true)
@@ -129,6 +162,7 @@ class DiscoveryViewModel(
                 location.latitude,
                 location.longitude,
                 _uiState.value.radiusMeters,
+                _uiState.value.priceLevel,
             )
             if (isRefresh) {
                 _uiState.update { it.copy(isRefreshing = false) }
@@ -222,5 +256,6 @@ class DiscoveryViewModel(
 
     private companion object {
         const val RADIUS_DEBOUNCE_MS = 350L
+        const val PRICE_DEBOUNCE_MS = 250L
     }
 }
