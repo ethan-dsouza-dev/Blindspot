@@ -2,8 +2,12 @@ package com.blindspot.app.di
 
 import com.blindspot.app.data.remote.NearestPlacesService
 import com.blindspot.app.data.remote.PlaceApi
+import com.blindspot.app.data.remote.RouteApi
+import com.blindspot.app.data.remote.RoutingService
+import com.blindspot.app.data.repository.MockRouteRepository
 import com.blindspot.app.data.repository.NetworkPlaceRepository
 import com.blindspot.app.data.repository.PlaceRepository
+import com.blindspot.app.data.repository.RouteRepository
 import com.blindspot.app.location.LocationProvider
 import com.blindspot.app.sensor.CompassSensorManager
 import com.blindspot.app.ui.discovery.DiscoveryViewModel
@@ -40,8 +44,15 @@ val appModule = module {
     single { get<Retrofit>().create(PlaceApi::class.java) }
     single { NearestPlacesService(get()) }
 
+    single { get<Retrofit>().create(RouteApi::class.java) }
+    single { RoutingService(get()) }
+
     // Live, network-backed implementation. MockPlaceRepository remains available for testing.
     single<PlaceRepository> { NetworkPlaceRepository(get()) }
+
+    // Mock routing until the backend /routes endpoint exists. Swap to NetworkRouteRepository(get())
+    // once the Geoapify-backed endpoint is live.
+    single<RouteRepository> { MockRouteRepository() }
 
     single { LocationProvider(androidContext()) }
     single { CompassSensorManager(androidContext()) }

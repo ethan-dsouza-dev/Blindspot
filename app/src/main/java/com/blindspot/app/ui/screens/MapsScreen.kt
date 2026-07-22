@@ -28,6 +28,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
 import com.blindspot.app.data.model.Place
+import com.blindspot.app.data.repository.RouteRepository
 import com.blindspot.app.ui.components.PermissionGate
 import com.blindspot.app.ui.components.PlaceInfoSheet
 import com.blindspot.app.ui.components.aurora.AuroraPlaceBanner
@@ -35,6 +36,7 @@ import com.blindspot.app.ui.components.aurora.AuroraSurface
 import com.blindspot.app.ui.theme.AuroraTokens
 import com.blindspot.app.util.GeoUtils
 import kotlinx.coroutines.launch
+import org.koin.compose.koinInject
 import org.maplibre.compose.camera.CameraPosition
 import org.maplibre.compose.camera.CameraState
 import org.maplibre.compose.camera.rememberCameraState
@@ -98,8 +100,12 @@ fun MapsScreen(
     PermissionGate(modifier = modifier) {
         val cameraState = rememberCameraState()
         val scope = rememberCoroutineScope()
+        val routeRepository = koinInject<RouteRepository>()
         var hasCenteredOnUser by remember { mutableStateOf(false) }
         var framedTargetId by remember { mutableStateOf<String?>(null) }
+        // Decoded route geometry for the current destination; null until it resolves (or when the
+        // fetch fails), in which case the map falls back to a straight guide line.
+        var routePositions by remember { mutableStateOf<List<Position>?>(null) }
         var sheetVisible by remember { mutableStateOf(false) }
         val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
@@ -137,6 +143,21 @@ fun MapsScreen(
             }
         }
 
+        // Fetch and decode the route for the current destination. Keyed on the target id and the
+        // first available fix so it runs once per destination (not on every tab switch). On
+        // failure routePositions stays null and the map falls back to a straight guide line.
+        LaunchedEffect(targetPlace?.id, userPosition != null) {
+            routePositions = null
+            val target = targetPlace ?: return@LaunchedEffect
+            val user = userPosition ?: return@LaunchedEffect
+            routePositions = routeRepository.getRoute(
+                fromLatitude = user.latitude,
+                fromLongitude = user.longitude,
+                toLatitude = target.latitude,
+                toLongitude = target.longitude,
+            ).getOrNull()?.points?.map { Position(it.longitude, it.latitude) }
+        }
+
         Box(modifier = Modifier.fillMaxSize()) {
             MaplibreMap(
                 modifier = Modifier.fillMaxSize(),
@@ -150,11 +171,13 @@ fun MapsScreen(
                 if (targetPlace != null) {
                     val targetPosition = Position(targetPlace.longitude, targetPlace.latitude)
 
-                    // Straight guide line from the user to the destination.
+                    // Decoded route line from the user to the destination; falls back to a
+                    // straight guide line until the route resolves (or if the fetch fails).
                     if (userPosition != null) {
+                        val linePositions = routePositions ?: listOf(userPosition, targetPosition)
                         val routeSource = rememberGeoJsonSource(
                             data = GeoJsonData.Features(
-                                LineString(listOf(userPosition, targetPosition)),
+                                LineString(linePositions),
                             ),
                         )
                         LineLayer(
