@@ -91,7 +91,6 @@ private suspend fun frameRoute(cameraState: CameraState, user: Position, target:
 @Composable
 fun MapsScreen(
     modifier: Modifier = Modifier,
-    isActive: Boolean = true,
     targetPlace: Place? = null,
     onClearTarget: () -> Unit = {},
 ) {
@@ -103,20 +102,16 @@ fun MapsScreen(
         var sheetVisible by remember { mutableStateOf(false) }
         val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
-        // Only subscribe to location/orientation while the Maps tab is visible. The MaplibreMap
-        // below stays composed (the native instance is never torn down), so switching tabs no
-        // longer reloads the map; toggling this just pauses GPS/tracking work.
-        val locationState = if (isActive) {
-            val locationProvider = rememberDefaultLocationProvider()
-            val orientationProvider = rememberDefaultOrientationProvider()
-            rememberUserLocationState(locationProvider, orientationProvider)
-        } else {
-            null
-        }
+        // The Maps tab only exists in the composition while it's the selected destination, so we
+        // can subscribe to location/orientation unconditionally; leaving the tab unmounts this and
+        // tears down the GPS/tracking work.
+        val locationProvider = rememberDefaultLocationProvider()
+        val orientationProvider = rememberDefaultOrientationProvider()
+        val locationState = rememberUserLocationState(locationProvider, orientationProvider)
 
         // Read the latest user position during composition so it stays current on every sampled
         // update; both the initial auto-center and the recenter button rely on this value.
-        val userPosition: Position? = locationState?.location?.position?.value
+        val userPosition: Position? = locationState.location?.position?.value
 
         // Center automatically once, as soon as the first location fix is available.
         LaunchedEffect(userPosition) {
@@ -183,89 +178,85 @@ fun MapsScreen(
                     )
                 }
 
-                if (locationState != null) {
-                    LocationPuck(
-                        idPrefix = "user",
-                        location = locationState.location,
-                        bearing = locationState.mostAccurateBearing(),
-                        cameraState = cameraState,
-                    )
-                }
+                LocationPuck(
+                    idPrefix = "user",
+                    location = locationState.location,
+                    bearing = locationState.mostAccurateBearing(),
+                    cameraState = cameraState,
+                )
             }
 
-            if (isActive) {
-                Column(
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .align(Alignment.BottomCenter)
+                    .navigationBarsPadding()
+                    .padding(bottom = 96.dp),
+            ) {
+                AuroraSurface(
+                    shape = CircleShape,
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .align(Alignment.BottomCenter)
-                        .navigationBarsPadding()
-                        .padding(bottom = 96.dp),
+                        .align(Alignment.End)
+                        .padding(end = 20.dp, bottom = 12.dp)
+                        .size(48.dp)
+                        .clip(CircleShape)
+                        .clickable(enabled = userPosition != null) {
+                            userPosition?.let { scope.launch { centerOnUser(cameraState, it) } }
+                        },
                 ) {
-                    AuroraSurface(
-                        shape = CircleShape,
-                        modifier = Modifier
-                            .align(Alignment.End)
-                            .padding(end = 20.dp, bottom = 12.dp)
-                            .size(48.dp)
-                            .clip(CircleShape)
-                            .clickable(enabled = userPosition != null) {
-                                userPosition?.let { scope.launch { centerOnUser(cameraState, it) } }
-                            },
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center,
                     ) {
-                        Box(
-                            modifier = Modifier.fillMaxSize(),
-                            contentAlignment = Alignment.Center,
-                        ) {
-                            Icon(
-                                imageVector = Icons.Filled.MyLocation,
-                                contentDescription = "Recenter map on my location",
-                                tint = AuroraTokens.AccentCyan,
-                                modifier = Modifier.size(22.dp),
-                            )
-                        }
+                        Icon(
+                            imageVector = Icons.Filled.MyLocation,
+                            contentDescription = "Recenter map on my location",
+                            tint = AuroraTokens.AccentCyan,
+                            modifier = Modifier.size(22.dp),
+                        )
                     }
+                }
 
-                    if (targetPlace != null) {
-                        val liveDistanceLabel = userPosition?.let { user ->
-                            GeoUtils.formatDistance(
-                                GeoUtils.distanceMeters(
-                                    user.latitude, user.longitude,
-                                    targetPlace.latitude, targetPlace.longitude,
-                                ),
-                            )
-                        } ?: targetPlace.distanceMeters?.let(GeoUtils::formatDistance).orEmpty()
+                if (targetPlace != null) {
+                    val liveDistanceLabel = userPosition?.let { user ->
+                        GeoUtils.formatDistance(
+                            GeoUtils.distanceMeters(
+                                user.latitude, user.longitude,
+                                targetPlace.latitude, targetPlace.longitude,
+                            ),
+                        )
+                    } ?: targetPlace.distanceMeters?.let(GeoUtils::formatDistance).orEmpty()
 
-                        Row(
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 20.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        AuroraPlaceBanner(
+                            place = targetPlace,
+                            distanceLabel = liveDistanceLabel,
+                            onClick = { sheetVisible = true },
+                            modifier = Modifier.weight(1f),
+                        )
+                        AuroraSurface(
+                            shape = CircleShape,
                             modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 20.dp),
-                            verticalAlignment = Alignment.CenterVertically,
+                                .padding(start = 12.dp)
+                                .size(44.dp)
+                                .clip(CircleShape)
+                                .clickable(onClick = onClearTarget),
                         ) {
-                            AuroraPlaceBanner(
-                                place = targetPlace,
-                                distanceLabel = liveDistanceLabel,
-                                onClick = { sheetVisible = true },
-                                modifier = Modifier.weight(1f),
-                            )
-                            AuroraSurface(
-                                shape = CircleShape,
-                                modifier = Modifier
-                                    .padding(start = 12.dp)
-                                    .size(44.dp)
-                                    .clip(CircleShape)
-                                    .clickable(onClick = onClearTarget),
+                            Box(
+                                modifier = Modifier.fillMaxSize(),
+                                contentAlignment = Alignment.Center,
                             ) {
-                                Box(
-                                    modifier = Modifier.fillMaxSize(),
-                                    contentAlignment = Alignment.Center,
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Filled.Close,
-                                        contentDescription = "Clear destination",
-                                        tint = AuroraTokens.TextSecondary,
-                                        modifier = Modifier.size(20.dp),
-                                    )
-                                }
+                                Icon(
+                                    imageVector = Icons.Filled.Close,
+                                    contentDescription = "Clear destination",
+                                    tint = AuroraTokens.TextSecondary,
+                                    modifier = Modifier.size(20.dp),
+                                )
                             }
                         }
                     }
