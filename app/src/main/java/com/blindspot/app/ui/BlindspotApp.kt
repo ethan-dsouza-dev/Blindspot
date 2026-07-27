@@ -32,10 +32,10 @@ fun BlindspotApp() {
     // Hoisted above the NavHost so it survives tab switches even though MapsScreen is unmounted
     // while another tab is on screen.
     var mapTarget by remember { mutableStateOf<Place?>(null) }
-    val navigateToPlace: (Place) -> Unit = { place ->
+    val navigateToPlace: (Place) -> Unit = remember(navController) { { place ->
         mapTarget = place
         navController.navigateToTab(Destination.Maps)
-    }
+    } }
 
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentDestination = backStackEntry?.destination
