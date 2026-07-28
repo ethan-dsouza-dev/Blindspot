@@ -196,7 +196,8 @@ fun MapsScreen(
                     // fails, in which case it stays static).
                     if (userPosition != null) {
                         val isRouteLoading = isFetchingRoute && routePositions == null
-                        val linePositions = routePositions ?: listOf(userPosition, targetPosition)
+                        val linePositions = routePositions?.takeIf { it.size >= 2 }
+                            ?: listOf(userPosition, targetPosition)
                         val routeSource = rememberGeoJsonSource(
                             data = GeoJsonData.Features(
                                 LineString(linePositions),
