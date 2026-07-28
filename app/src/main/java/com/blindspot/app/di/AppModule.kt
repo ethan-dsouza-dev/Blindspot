@@ -7,6 +7,7 @@ import com.blindspot.app.data.repository.PlaceRepository
 import com.blindspot.app.location.LocationProvider
 import com.blindspot.app.sensor.CompassSensorManager
 import com.blindspot.app.ui.discovery.DiscoveryViewModel
+import com.blindspot.app.ui.profile.ProfileViewModel
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import org.koin.android.ext.koin.androidContext
@@ -15,7 +16,7 @@ import org.koin.dsl.module
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 
-private const val BASE_URL = "https://api.blindspot.example/"
+private const val BASE_URL = "https://blindspot-api-x8o7.onrender.com"
 
 val appModule = module {
 
@@ -47,4 +48,5 @@ val appModule = module {
     single { CompassSensorManager(androidContext()) }
 
     viewModel { DiscoveryViewModel(get(), get(), get()) }
+    viewModel { ProfileViewModel() }
 }

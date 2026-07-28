@@ -19,6 +19,7 @@ import com.blindspot.app.ui.components.aurora.AuroraBackground
 import com.blindspot.app.ui.screens.DiscoveryScreen
 import com.blindspot.app.ui.screens.FeedScreen
 import com.blindspot.app.ui.screens.MapsScreen
+import com.blindspot.app.ui.screens.ProfileScreen
 
 @Composable
 fun BlindspotApp() {
@@ -40,6 +41,7 @@ fun BlindspotApp() {
     }
     val discoveryContent = remember { movableContentOf { DiscoveryScreen(onNavigateToMaps = navigateToPlace) } }
     val feedContent = remember { movableContentOf { FeedScreen(onNavigateToMaps = navigateToPlace) } }
+    val profileContent = remember { movableContentOf { ProfileScreen()} }
 
     AuroraBackground(modifier = Modifier.fillMaxSize()) {
         Box(modifier = Modifier.fillMaxSize()) {
@@ -60,6 +62,7 @@ fun BlindspotApp() {
                                 Destination.Maps -> mapsContent(isActive)
                                 Destination.Discovery -> discoveryContent()
                                 Destination.Feed -> feedContent()
+                                Destination.Profile -> profileContent()
                             }
                         }
                     }
