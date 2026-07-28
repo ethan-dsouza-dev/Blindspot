@@ -5,8 +5,9 @@ import com.blindspot.app.data.model.Route
 /**
  * Source of navigation [Route]s between two coordinates.
  *
- * Swap the bound implementation in the Koin module to move from [MockRouteRepository]
- * to a real network-backed one without touching the UI.
+ * [NetworkRouteRepository] is the live implementation backed by the Blindspot backend's
+ * `/routing/route` endpoint; alternate implementations can be bound in the Koin module without
+ * touching the UI.
  */
 interface RouteRepository {
 

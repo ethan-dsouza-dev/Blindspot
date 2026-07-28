@@ -3,9 +3,9 @@ package com.blindspot.app.data.remote
 import com.blindspot.app.data.model.Route
 
 /**
- * Thin service over [RouteApi] that fetches a route between two coordinates and maps the network
- * [RouteDto] (encoded polyline) to a domain [Route] with decoded geometry. Keeps the Retrofit
- * contract isolated from callers.
+ * Thin service over [RouteApi] that fetches a route between two coordinates from the backend's
+ * `/routing/route` endpoint and maps the network [RouteDto] (encoded polyline) to a domain
+ * [Route] with decoded geometry. Keeps the Retrofit contract isolated from callers.
  */
 class RoutingService(
     private val api: RouteApi,

@@ -4,8 +4,8 @@ import com.blindspot.app.data.remote.NearestPlacesService
 import com.blindspot.app.data.remote.PlaceApi
 import com.blindspot.app.data.remote.RouteApi
 import com.blindspot.app.data.remote.RoutingService
-import com.blindspot.app.data.repository.MockRouteRepository
 import com.blindspot.app.data.repository.NetworkPlaceRepository
+import com.blindspot.app.data.repository.NetworkRouteRepository
 import com.blindspot.app.data.repository.PlaceRepository
 import com.blindspot.app.data.repository.RouteRepository
 import com.blindspot.app.location.LocationProvider
@@ -50,9 +50,7 @@ val appModule = module {
     // Live, network-backed implementation. MockPlaceRepository remains available for testing.
     single<PlaceRepository> { NetworkPlaceRepository(get()) }
 
-    // Mock routing until the backend /routes endpoint exists. Swap to NetworkRouteRepository(get())
-    // once the Geoapify-backed endpoint is live.
-    single<RouteRepository> { MockRouteRepository() }
+    single<RouteRepository> { NetworkRouteRepository(get()) }
 
     single { LocationProvider(androidContext()) }
     single { CompassSensorManager(androidContext()) }

@@ -6,17 +6,20 @@ import retrofit2.http.Query
 /**
  * Retrofit definition for the routing endpoint.
  *
- * Maps to `GET /routes?from_lat=&from_lng=&to_lat=&to_lng=&mode=` on the Blindspot backend,
- * which proxies the Geoapify Routing API and returns the geometry as an encoded polyline.
+ * Maps to `GET /routing/route?originLat=&originLng=&destLat=&destLng=&mode=` on the Blindspot
+ * backend, which proxies the Geoapify Routing API and returns the geometry as an encoded polyline.
+ * Returns 400 for out-of-range lat/lng and 404 when Geoapify finds no route.
  */
 interface RouteApi {
 
-    @GET("routes")
+    @GET("routing/route")
     suspend fun getRoute(
-        @Query("from_lat") fromLatitude: Double,
-        @Query("from_lng") fromLongitude: Double,
-        @Query("to_lat") toLatitude: Double,
-        @Query("to_lng") toLongitude: Double,
+        @Query("originLat") originLatitude: Double,
+        @Query("originLng") originLongitude: Double,
+        @Query("destLat") destLatitude: Double,
+        @Query("destLng") destLongitude: Double,
+        // TODO: expose mode selection once the UI supports switching travel modes; the backend
+        // already accepts this optional param (defaults to "walk").
         @Query("mode") mode: String,
     ): RouteDto
 }
