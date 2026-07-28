@@ -1,5 +1,11 @@
 package com.blindspot.app.ui.screens
 
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -105,8 +111,25 @@ fun MapsScreen(
         // Decoded route geometry for the current destination; null until it resolves (or when the
         // fetch fails), in which case the map falls back to a straight guide line.
         var routePositions by remember { mutableStateOf<List<Position>?>(null) }
+        // True while a route fetch is in flight; distinguishes "still loading" from "fetch
+        // failed", both of which leave routePositions null, so the guide line only pulses
+        // during an active fetch and reads as static once it has settled with a failure.
+        var isFetchingRoute by remember { mutableStateOf(false) }
         var sheetVisible by remember { mutableStateOf(false) }
         val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+
+        // Pulses the straight guide line's opacity while the real route is still loading, so the
+        // static line reads as a loading state rather than a finished result.
+        val routeLinePulse = rememberInfiniteTransition(label = "routeLinePulse")
+        val routeLinePulseAlpha by routeLinePulse.animateFloat(
+            initialValue = 0.25f,
+            targetValue = 0.8f,
+            animationSpec = infiniteRepeatable(
+                animation = tween(durationMillis = 700, easing = LinearEasing),
+                repeatMode = RepeatMode.Reverse,
+            ),
+            label = "routeLinePulseAlpha",
+        )
 
         // The Maps tab only exists in the composition while it's the selected destination, so we
         // can subscribe to location/orientation unconditionally; leaving the tab unmounts this and
@@ -145,12 +168,14 @@ fun MapsScreen(
             routePositions = null
             val target = targetPlace ?: return@LaunchedEffect
             val user = userPosition ?: return@LaunchedEffect
+            isFetchingRoute = true
             routePositions = routeRepository.getRoute(
                 fromLatitude = user.latitude,
                 fromLongitude = user.longitude,
                 toLatitude = target.latitude,
                 toLongitude = target.longitude,
             ).getOrNull()?.points?.map { Position(it.longitude, it.latitude) }
+            isFetchingRoute = false
         }
 
         Box(modifier = Modifier.fillMaxSize()) {
@@ -167,18 +192,21 @@ fun MapsScreen(
                     val targetPosition = Position(targetPlace.longitude, targetPlace.latitude)
 
                     // Decoded route line from the user to the destination; falls back to a
-                    // straight guide line until the route resolves (or if the fetch fails).
+                    // straight guide line that pulses while the route resolves (or if the fetch
+                    // fails, in which case it stays static).
                     if (userPosition != null) {
+                        val isRouteLoading = isFetchingRoute && routePositions == null
                         val linePositions = routePositions ?: listOf(userPosition, targetPosition)
                         val routeSource = rememberGeoJsonSource(
                             data = GeoJsonData.Features(
                                 LineString(linePositions),
                             ),
                         )
+                        val lineAlpha = if (isRouteLoading) routeLinePulseAlpha else 0.8f
                         LineLayer(
                             id = "route-line",
                             source = routeSource,
-                            color = const(AuroraTokens.AccentCyan.copy(alpha = 0.8f)),
+                            color = const(AuroraTokens.AccentCyan.copy(alpha = lineAlpha)),
                             width = const(3.dp),
                         )
                     }
