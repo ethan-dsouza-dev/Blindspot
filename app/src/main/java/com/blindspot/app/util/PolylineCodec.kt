@@ -28,8 +28,8 @@ object PolylineCodec {
         val factor = Math.pow(10.0, precision.toDouble())
         val points = ArrayList<RoutePoint>()
         var index = 0
-        var lat = 0
-        var lng = 0
+        var lat = 0L
+        var lng = 0L
 
         while (index < encoded.length) {
             lat += decodeDelta(encoded, index).also { index = it.nextIndex }.value
