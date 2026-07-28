@@ -23,6 +23,7 @@ import com.blindspot.app.ui.components.aurora.AuroraBackground
 import com.blindspot.app.ui.screens.DiscoveryScreen
 import com.blindspot.app.ui.screens.FeedScreen
 import com.blindspot.app.ui.screens.MapsScreen
+import com.blindspot.app.ui.screens.ProfileScreen
 
 @Composable
 fun BlindspotApp() {
