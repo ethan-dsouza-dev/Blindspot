@@ -64,6 +64,9 @@ fun BlindspotApp() {
                 composable(Destination.Feed.route) {
                     FeedScreen(onNavigateToMaps = navigateToPlace)
                 }
+                composable(Destination.Profile.route) {
+                    ProfileScreen()
+                }
             }
 
             // Floating navigation pill overlaid at the bottom
