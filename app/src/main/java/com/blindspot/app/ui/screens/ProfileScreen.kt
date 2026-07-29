@@ -39,6 +39,8 @@ import com.blindspot.app.ui.profile.ProfileUiState
 import com.blindspot.app.ui.profile.ProfileViewModel
 import com.blindspot.app.ui.theme.AuroraTokens
 import org.koin.androidx.compose.koinViewModel
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.foundation.layout.fillMaxWidth
 
 private const val SAVED_PLACE_LABEL = "Saved"
 
@@ -179,6 +181,20 @@ private fun ProfileScreenContent(
                     item = TrendingPlaceItem(place = place, distanceLabel = SAVED_PLACE_LABEL),
                     onClick = { selectedPlace = place },
                 )
+            }
+        }
+        item {
+            Button(
+                onClick = onSignOut,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 8.dp, bottom = 24.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = AuroraTokens.SurfaceElevated,
+                    contentColor = AuroraTokens.TextPrimary,
+                ),
+            ) {
+                Text("Sign out")
             }
         }
     }
