@@ -9,14 +9,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.navigation.NavDestination.Companion.hierarchy
-import androidx.navigation.NavGraph.Companion.findStartDestination
-import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.blindspot.app.auth.TokenStore
 import com.blindspot.app.data.model.Place
+import com.blindspot.app.navigation.AuthDestinations
 import com.blindspot.app.navigation.Destination
 import com.blindspot.app.ui.components.FloatingNavPill
 import com.blindspot.app.ui.components.aurora.AuroraBackground
@@ -24,69 +22,78 @@ import com.blindspot.app.ui.screens.DiscoveryScreen
 import com.blindspot.app.ui.screens.FeedScreen
 import com.blindspot.app.ui.screens.MapsScreen
 import com.blindspot.app.ui.screens.ProfileScreen
+import com.blindspot.app.ui.screens.SignInScreen
+import org.koin.compose.koinInject
 
 @Composable
 fun BlindspotApp() {
     val navController = rememberNavController()
+    val tokenStore: TokenStore = koinInject()
+    var isAuthenticated by remember { mutableStateOf(tokenStore.isAuthenticated) }
 
     // The venue the map should guide the user to; set by "Take me there" from any detail sheet.
     // Hoisted above the NavHost so it survives tab switches even though MapsScreen is unmounted
     // while another tab is on screen.
     var mapTarget by remember { mutableStateOf<Place?>(null) }
-    val navigateToPlace: (Place) -> Unit = remember(navController) { { place ->
-        mapTarget = place
-        navController.navigateToTab(Destination.Maps)
-    } }
-
-    val backStackEntry by navController.currentBackStackEntryAsState()
-    val currentDestination = backStackEntry?.destination
-    val selected = Destination.entries.firstOrNull { destination ->
-        currentDestination?.hierarchy?.any { it.route == destination.route } == true
-    } ?: Destination.Discovery
+    var selectedTab by remember { mutableStateOf(Destination.Discovery) }
+    val navigateToPlace: (Place) -> Unit = {
+        mapTarget = it
+        selectedTab = Destination.Maps
+    }
 
     AuroraBackground(modifier = Modifier.fillMaxSize()) {
         Box(modifier = Modifier.fillMaxSize()) {
-            // Only the selected tab is composed, so taps can't bleed through to a hidden screen.
             NavHost(
                 navController = navController,
-                startDestination = Destination.Discovery.route,
+                startDestination = if (isAuthenticated) AuthDestinations.MAIN else AuthDestinations.SIGN_IN,
                 modifier = Modifier.fillMaxSize(),
             ) {
-                composable(Destination.Maps.route) {
-                    MapsScreen(
-                        targetPlace = mapTarget,
-                        onClearTarget = { mapTarget = null },
+                composable(AuthDestinations.SIGN_IN) {
+                    SignInScreen(
+                        onSignedIn = {
+                            isAuthenticated = true
+                            navController.navigate(AuthDestinations.MAIN) {
+                                popUpTo(AuthDestinations.SIGN_IN) { inclusive = true }
+                            }
+                        },
                     )
                 }
-                composable(Destination.Discovery.route) {
-                    DiscoveryScreen(onNavigateToMaps = navigateToPlace)
-                }
-                composable(Destination.Feed.route) {
-                    FeedScreen(onNavigateToMaps = navigateToPlace)
-                }
-                composable(Destination.Profile.route) {
-                    ProfileScreen()
+                composable(AuthDestinations.MAIN) {
+                    MainContent(
+                        selected = selectedTab,
+                        mapTarget = mapTarget,
+                        onClearTarget = { mapTarget = null },
+                        onNavigateToMaps = navigateToPlace,
+                        onTabSelected = { selectedTab = it },
+                    )
                 }
             }
-
-            // Floating navigation pill overlaid at the bottom
-            FloatingNavPill(
-                selected = selected,
-                onSelect = navController::navigateToTab,
-                modifier = Modifier.align(Alignment.BottomCenter),
-            )
         }
     }
 }
 
-/**
- * Standard bottom-navigation switch: single top-level entry per tab, saving and restoring each
- * tab's state so switching back and forth doesn't stack duplicate destinations.
- */
-private fun NavHostController.navigateToTab(destination: Destination) {
-    navigate(destination.route) {
-        popUpTo(graph.findStartDestination().id) { saveState = true }
-        launchSingleTop = true
-        restoreState = true
+@Composable
+private fun MainContent(
+    selected: Destination,
+    mapTarget: Place?,
+    onClearTarget: () -> Unit,
+    onNavigateToMaps: (Place) -> Unit,
+    onTabSelected: (Destination) -> Unit,
+) {
+    Box(modifier = Modifier.fillMaxSize()) {
+        when (selected) {
+            Destination.Maps -> MapsScreen(
+                targetPlace = mapTarget,
+                onClearTarget = onClearTarget,
+            )
+            Destination.Discovery -> DiscoveryScreen(onNavigateToMaps = onNavigateToMaps)
+            Destination.Feed -> FeedScreen(onNavigateToMaps = onNavigateToMaps)
+        }
+
+        FloatingNavPill(
+            selected = selected,
+            onSelect = onTabSelected,
+            modifier = Modifier.align(Alignment.BottomCenter),
+        )
     }
 }
