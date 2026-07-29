@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -52,6 +53,7 @@ fun ProfileScreen(
         onToggleUnits = viewModel::onToggleUnits,
         onToggleNotifications = viewModel::onToggleNotifications,
         onSignOut = viewModel::onSignOut,
+        onRetry = viewModel::loadProfile,
     )
 }
 
@@ -62,6 +64,7 @@ private fun ProfileScreenContent(
     onToggleUnits: (Boolean) -> Unit,
     onToggleNotifications: (Boolean) -> Unit,
     onSignOut: () -> Unit,
+    onRetry: () -> Unit,
 ) {
     var selectedPlace by remember { mutableStateOf<Place?>(null) }
     val sheetState = rememberModalBottomSheetState()
@@ -73,6 +76,27 @@ private fun ProfileScreenContent(
             verticalArrangement = Arrangement.Center,
         ) {
             CircularProgressIndicator(color = AuroraTokens.AccentCyan)
+        }
+        return
+    }
+
+    if (uiState.error != null) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center,
+        ) {
+            Text(
+                text = uiState.error,
+                color = AuroraTokens.TextSecondary,
+                fontSize = 14.sp,
+                modifier = Modifier.padding(bottom = 16.dp),
+            )
+            Button(onClick = onRetry) {
+                Text("Retry")
+            }
         }
         return
     }

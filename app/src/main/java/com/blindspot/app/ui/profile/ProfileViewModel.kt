@@ -20,18 +20,27 @@ class ProfileViewModel(
         loadProfile()
     }
 
-    private fun loadProfile() {
+    fun loadProfile() {
         viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true) }
-            // TODO: replace with real repository call
-            _uiState.update {
-                it.copy(
-                    isLoading = false,
-                    name = "Bron",
-                    email = "bron@example.com",
-                    avatarUrl = null,
-                    savedPlaces = emptyList(),
-                )
+            _uiState.update { it.copy(isLoading = true, error = null) }
+            try {
+                // TODO: replace with real repository call
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        name = "User",
+                        email = "user@example.com",
+                        avatarUrl = null,
+                        savedPlaces = emptyList(),
+                    )
+                }
+            } catch (e: Exception) {
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        error = e.message ?: "Couldn't load profile",
+                    )
+                }
             }
         }
     }

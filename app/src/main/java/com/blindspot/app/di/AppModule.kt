@@ -20,7 +20,7 @@ import org.koin.dsl.module
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 
-private const val BASE_URL = "https://blindspot-api-x8o7.onrender.com"
+private const val BASE_URL = "https://blindspot-api/"
 
 val appModule = module {
 
