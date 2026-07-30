@@ -1,5 +1,6 @@
 package com.blindspot.app.auth
 
+import android.app.Activity
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -22,7 +23,7 @@ class AuthViewModel(
     var uiState by mutableStateOf<SignInUiState>(SignInUiState.Idle)
         private set
 
-    fun signInWithGoogle() {
+    fun signInWithGoogle(activity: Activity) {
         if (serverClientId.isBlank()) {
             uiState = SignInUiState.Error("Google Sign-In is not configured (missing server client ID)")
             return
@@ -30,7 +31,7 @@ class AuthViewModel(
 
         uiState = SignInUiState.Loading
         viewModelScope.launch {
-            val result = authRepository.signInWithGoogle(serverClientId)
+            val result = authRepository.signInWithGoogle(activity, serverClientId)
             uiState = when (result) {
                 is SignInResult.Success -> SignInUiState.SignedIn
                 is SignInResult.Error -> if (result.isCancellation) SignInUiState.Idle else SignInUiState.Error(result.message)

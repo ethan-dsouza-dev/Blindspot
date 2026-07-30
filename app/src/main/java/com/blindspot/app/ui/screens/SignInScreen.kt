@@ -17,7 +17,9 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import android.app.Activity
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -36,6 +38,7 @@ fun SignInScreen(
     viewModel: AuthViewModel = koinViewModel(),
 ) {
     val state = viewModel.uiState
+    val activity = LocalContext.current as Activity
 
     LaunchedEffect(state) {
         if (state is SignInUiState.SignedIn) {
@@ -71,7 +74,7 @@ fun SignInScreen(
             val enabled = !isLoading && state !is SignInUiState.SignedIn
 
             Button(
-                onClick = viewModel::signInWithGoogle,
+                onClick = { viewModel.signInWithGoogle(activity) },
                 enabled = enabled,
                 shape = RoundedCornerShape(12.dp),
                 colors = ButtonDefaults.buttonColors(

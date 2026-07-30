@@ -1,5 +1,6 @@
 package com.blindspot.app.auth
 
+import android.app.Activity
 import android.content.Context
 import androidx.credentials.CredentialManager
 import androidx.credentials.CustomCredential
@@ -26,7 +27,7 @@ class AuthRepository(
 ) {
     private val credentialManager: CredentialManager = CredentialManager.create(context)
 
-    suspend fun signInWithGoogle(serverClientId: String): SignInResult = withContext(Dispatchers.IO) {
+    suspend fun signInWithGoogle(activity: Activity, serverClientId: String): SignInResult = withContext(Dispatchers.IO) {
         try {
             val request = GetCredentialRequest.Builder()
                 .addCredentialOption(
@@ -35,7 +36,7 @@ class AuthRepository(
                 )
                 .build()
 
-            val response = credentialManager.getCredential(context, request)
+            val response = credentialManager.getCredential(activity, request)
             val idToken = extractIdToken(response)
                 ?: return@withContext SignInResult.Error("Google sign-in did not return an ID token")
 
