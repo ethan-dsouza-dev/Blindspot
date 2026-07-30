@@ -10,7 +10,6 @@ import androidx.credentials.exceptions.GetCredentialException
 import com.blindspot.app.data.remote.AuthApi
 import com.blindspot.app.data.remote.AuthResponse
 import com.blindspot.app.data.remote.GoogleSignInRequest
-import java.io.IOException
 import retrofit2.HttpException
 import com.google.android.libraries.identity.googleid.GetSignInWithGoogleOption
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
