@@ -10,6 +10,8 @@ import androidx.credentials.exceptions.GetCredentialException
 import com.blindspot.app.data.remote.AuthApi
 import com.blindspot.app.data.remote.AuthResponse
 import com.blindspot.app.data.remote.GoogleSignInRequest
+import java.io.IOException
+import retrofit2.HttpException
 import com.google.android.libraries.identity.googleid.GetSignInWithGoogleOption
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import kotlinx.coroutines.Dispatchers
@@ -58,8 +60,10 @@ class AuthRepository(
             val response = authApi.refresh(com.blindspot.app.data.remote.RefreshRequest(refreshToken))
             tokenStore.saveTokens(response.accessToken, response.refreshToken)
             response
-        } catch (e: Exception) {
-            tokenStore.clear()
+        } catch (e: HttpException) {
+            if (e.code() == 401 || e.code() == 403) {
+                tokenStore.clear()
+            }
             null
         }
     }
