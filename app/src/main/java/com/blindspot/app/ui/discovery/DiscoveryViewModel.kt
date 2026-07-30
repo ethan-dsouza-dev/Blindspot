@@ -15,6 +15,9 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.drop
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
@@ -24,7 +27,7 @@ import kotlinx.coroutines.launch
  *
  * Skip logic: [skipToNext] advances the index and the compass retargets reactively.
  */
-class DiscoveryViewModel(
+class PlacesViewModel(
     private val placeRepository: PlaceRepository,
     private val locationProvider: LocationProvider,
     private val compassSensorManager: CompassSensorManager,
@@ -32,6 +35,11 @@ class DiscoveryViewModel(
 
     private val _uiState = MutableStateFlow(DiscoveryUiState())
     val uiState: StateFlow<DiscoveryUiState> = _uiState.asStateFlow()
+
+    /** Exposed place list as a separate [StateFlow] so both Discovery and Explore can collect it. */
+    val nearbyPlaces: StateFlow<List<Place>> = uiState
+        .map { it.places }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
     /** Latest slider radius. Reloads are debounced off this stream so we query once the
      * user stops sliding rather than on every intermediate value. */

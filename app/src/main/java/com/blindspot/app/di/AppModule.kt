@@ -16,7 +16,7 @@ import com.blindspot.app.data.repository.PlaceRepository
 import com.blindspot.app.data.repository.RouteRepository
 import com.blindspot.app.location.LocationProvider
 import com.blindspot.app.sensor.CompassSensorManager
-import com.blindspot.app.ui.discovery.DiscoveryViewModel
+import com.blindspot.app.ui.discovery.PlacesViewModel
 import com.blindspot.app.ui.profile.ProfileViewModel
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
@@ -89,6 +89,6 @@ val appModule = module {
     single { CompassSensorManager(androidContext()) }
 
     viewModel { AuthViewModel(get(), GOOGLE_SERVER_CLIENT_ID) }
-    viewModel { DiscoveryViewModel(get(), get(), get()) }
+    viewModel { PlacesViewModel(get(), get(), get()) }
     viewModel { ProfileViewModel(get()) }
 }

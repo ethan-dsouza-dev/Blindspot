@@ -14,6 +14,6 @@ enum class Destination(
 ) {
     Maps("maps", "Map", Icons.Filled.Map),
     Discovery("discovery", "Discover", Icons.Filled.Explore),
-    Feed("feed", "Explore", Icons.Filled.GridView),
+    Feed("feed", "Feed", Icons.Filled.GridView),
     Profile("profile", "Profile", Icons.Filled.Person),
 }
