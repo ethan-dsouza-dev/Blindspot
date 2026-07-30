@@ -65,6 +65,10 @@ class AuthRepository(
                 tokenStore.clear()
             }
             null
+        } catch (e: IOException) {
+            // Transient network failure — do not clear tokens; let the authenticator
+            // return null so OkHttp propagates the original 401 to the caller.
+            null
         }
     }
 
