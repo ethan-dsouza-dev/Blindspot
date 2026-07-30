@@ -5,6 +5,9 @@ import android.content.SharedPreferences
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKey
 import androidx.core.content.edit
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 
 /**
  * Secure token storage backed by [EncryptedSharedPreferences] + Android Keystore.
@@ -22,9 +25,15 @@ class TokenStore(context: Context) {
         EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM,
     )
 
+    private val _isAuthenticatedFlow = MutableStateFlow(isAuthenticated)
+    val isAuthenticatedFlow: StateFlow<Boolean> = _isAuthenticatedFlow.asStateFlow()
+
     var isAuthenticated: Boolean
         get() = prefs.getBoolean(KEY_IS_AUTHENTICATED, false)
-        set(value) = prefs.edit { putBoolean(KEY_IS_AUTHENTICATED, value) }
+        set(value) {
+            prefs.edit { putBoolean(KEY_IS_AUTHENTICATED, value) }
+            _isAuthenticatedFlow.value = value
+        }
 
     var accessToken: String?
         get() = prefs.getString(KEY_ACCESS_TOKEN, null)
@@ -35,15 +44,14 @@ class TokenStore(context: Context) {
         set(value) = prefs.edit { putString(KEY_REFRESH_TOKEN, value) }
 
     fun saveTokens(accessToken: String, refreshToken: String) {
-        prefs.edit {
-            putString(KEY_ACCESS_TOKEN, accessToken)
-            putString(KEY_REFRESH_TOKEN, refreshToken)
-            putBoolean(KEY_IS_AUTHENTICATED, true)
-        }
+        this.accessToken = accessToken
+        this.refreshToken = refreshToken
+        this.isAuthenticated = true
     }
 
     fun clear() {
         prefs.edit { clear() }
+        _isAuthenticatedFlow.value = isAuthenticated
     }
 
     companion object {

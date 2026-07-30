@@ -3,10 +3,12 @@ package com.blindspot.app.ui
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.navigation.compose.NavHost
@@ -31,15 +33,21 @@ import org.koin.compose.koinInject
 fun BlindspotApp() {
     val navController = rememberNavController()
     val tokenStore: TokenStore = koinInject()
-    var isAuthenticated by remember { mutableStateOf(tokenStore.isAuthenticated) }
+    val isAuthenticated by tokenStore.isAuthenticatedFlow.collectAsStateWithLifecycle()
     val authViewModel: AuthViewModel = koinViewModel()
+
+    LaunchedEffect(isAuthenticated) {
+        val currentRoute = navController.currentBackStackEntry?.destination?.route
+        if (!isAuthenticated && currentRoute != null && currentRoute != AuthDestinations.SIGN_IN) {
+            navController.navigate(AuthDestinations.SIGN_IN) {
+                popUpTo(AuthDestinations.MAIN) { inclusive = true }
+                launchSingleTop = true
+            }
+        }
+    }
+
     val onSignOut: () -> Unit = {
         authViewModel.signOut()
-        isAuthenticated = false
-        navController.navigate(AuthDestinations.SIGN_IN) {
-            popUpTo(AuthDestinations.MAIN) { inclusive = true }
-            launchSingleTop = true
-        }
     }
 
     // The venue the map should guide the user to; set by "Take me there" from any detail sheet.
@@ -62,7 +70,6 @@ fun BlindspotApp() {
                 composable(AuthDestinations.SIGN_IN) {
                     SignInScreen(
                         onSignedIn = {
-                            isAuthenticated = true
                             navController.navigate(AuthDestinations.MAIN) {
                                 popUpTo(AuthDestinations.SIGN_IN) { inclusive = true }
                             }
