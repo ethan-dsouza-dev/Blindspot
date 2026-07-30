@@ -7,10 +7,10 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import com.blindspot.app.auth.TokenStore
 
 class ProfileViewModel(
-    // TODO: inject a real UserRepository once auth/backend exists,
-    // same pattern as PlaceRepository in AppModule.kt
+    private val tokenStore: TokenStore,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ProfileUiState())
@@ -24,13 +24,13 @@ class ProfileViewModel(
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, error = null) }
             try {
-                // TODO: replace with real repository call
+                val user = tokenStore.currentUser
                 _uiState.update {
                     it.copy(
                         isLoading = false,
-                        name = "User",
-                        email = "user@example.com",
-                        avatarUrl = null,
+                        name = user?.name?.takeIf { it.isNotBlank() } ?: user?.email ?: "User",
+                        email = user?.email ?: "",
+                        avatarUrl = user?.pictureUrl,
                         savedPlaces = emptyList(),
                     )
                 }

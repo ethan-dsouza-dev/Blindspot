@@ -30,6 +30,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.layout.ContentScale
+import coil3.compose.AsyncImage
 import com.blindspot.app.data.model.Place
 import com.blindspot.app.ui.components.NearbyPlaceRow
 import com.blindspot.app.ui.components.PlaceInfoSheet
@@ -40,13 +42,13 @@ import com.blindspot.app.ui.profile.ProfileViewModel
 import com.blindspot.app.ui.theme.AuroraTokens
 import org.koin.androidx.compose.koinViewModel
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.foundation.layout.fillMaxWidth
 
 private const val SAVED_PLACE_LABEL = "Saved"
 
 @Composable
 fun ProfileScreen(
     viewModel: ProfileViewModel = koinViewModel(),
+    onSignOut: () -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
@@ -54,7 +56,7 @@ fun ProfileScreen(
         uiState = uiState,
         onToggleUnits = viewModel::onToggleUnits,
         onToggleNotifications = viewModel::onToggleNotifications,
-        onSignOut = viewModel::onSignOut,
+        onSignOut = onSignOut,
         onRetry = viewModel::loadProfile,
     )
 }
@@ -127,14 +129,25 @@ private fun ProfileScreenContent(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(16.dp),
                 ) {
-                    Icon(
-                        imageVector = Icons.Filled.Person,
-                        contentDescription = "Avatar",
-                        modifier = Modifier
-                            .size(56.dp)
-                            .clip(CircleShape),
-                        tint = AuroraTokens.AccentCyan,
-                    )
+                    if (uiState.avatarUrl.isNullOrBlank()) {
+                        Icon(
+                            imageVector = Icons.Filled.Person,
+                            contentDescription = "Avatar",
+                            modifier = Modifier
+                                .size(56.dp)
+                                .clip(CircleShape),
+                            tint = AuroraTokens.AccentCyan,
+                        )
+                    } else {
+                        AsyncImage(
+                            model = uiState.avatarUrl,
+                            contentDescription = "Avatar",
+                            modifier = Modifier
+                                .size(56.dp)
+                                .clip(CircleShape),
+                            contentScale = ContentScale.Crop,
+                        )
+                    }
                     Column {
                         Text(
                             text = uiState.name,
