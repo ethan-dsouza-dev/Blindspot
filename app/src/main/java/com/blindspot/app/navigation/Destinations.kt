@@ -4,6 +4,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Explore
 import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material.icons.filled.Map
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.ui.graphics.vector.ImageVector
 
 enum class Destination(
@@ -14,4 +15,5 @@ enum class Destination(
     Maps("maps", "Map", Icons.Filled.Map),
     Discovery("discovery", "Discover", Icons.Filled.Explore),
     Feed("feed", "Explore", Icons.Filled.GridView),
+    Profile("profile", "Profile", Icons.Filled.Person),
 }

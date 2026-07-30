@@ -11,6 +11,7 @@ import com.blindspot.app.data.repository.RouteRepository
 import com.blindspot.app.location.LocationProvider
 import com.blindspot.app.sensor.CompassSensorManager
 import com.blindspot.app.ui.discovery.DiscoveryViewModel
+import com.blindspot.app.ui.profile.ProfileViewModel
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import org.koin.android.ext.koin.androidContext
@@ -56,4 +57,5 @@ val appModule = module {
     single { CompassSensorManager(androidContext()) }
 
     viewModel { DiscoveryViewModel(get(), get(), get()) }
+    viewModel { ProfileViewModel() }
 }
