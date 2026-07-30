@@ -35,9 +35,11 @@ class TokenStore(context: Context) {
         set(value) = prefs.edit { putString(KEY_REFRESH_TOKEN, value) }
 
     fun saveTokens(accessToken: String, refreshToken: String) {
-        this.accessToken = accessToken
-        this.refreshToken = refreshToken
-        this.isAuthenticated = true
+        prefs.edit {
+            putString(KEY_ACCESS_TOKEN, accessToken)
+            putString(KEY_REFRESH_TOKEN, refreshToken)
+            putBoolean(KEY_IS_AUTHENTICATED, true)
+        }
     }
 
     fun clear() {
