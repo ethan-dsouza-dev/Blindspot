@@ -90,5 +90,5 @@ val appModule = module {
 
     viewModel { AuthViewModel(get(), GOOGLE_SERVER_CLIENT_ID) }
     viewModel { DiscoveryViewModel(get(), get(), get()) }
-    viewModel { ProfileViewModel() }
+    viewModel { ProfileViewModel(get()) }
 }

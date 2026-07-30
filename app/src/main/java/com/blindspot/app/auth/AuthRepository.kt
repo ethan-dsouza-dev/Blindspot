@@ -43,7 +43,7 @@ class AuthRepository(
                 ?: return@withContext SignInResult.Error("Google sign-in did not return an ID token")
 
             val authResponse = authApi.signInWithGoogle(GoogleSignInRequest(idToken))
-            tokenStore.saveTokens(authResponse.accessToken, authResponse.refreshToken)
+            tokenStore.saveTokens(authResponse.accessToken, authResponse.refreshToken, authResponse.user)
 
             SignInResult.Success(authResponse)
         } catch (e: GetCredentialException) {
@@ -58,7 +58,7 @@ class AuthRepository(
         val refreshToken = tokenStore.refreshToken ?: return@withContext null
         return@withContext try {
             val response = authApi.refresh(com.blindspot.app.data.remote.RefreshRequest(refreshToken))
-            tokenStore.saveTokens(response.accessToken, response.refreshToken)
+            tokenStore.saveTokens(response.accessToken, response.refreshToken, response.user)
             response
         } catch (e: HttpException) {
             if (e.code() == 401 || e.code() == 403) {

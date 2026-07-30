@@ -5,6 +5,8 @@ import android.content.SharedPreferences
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKey
 import androidx.core.content.edit
+import com.blindspot.app.data.remote.UserDto
+import com.google.gson.Gson
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -14,6 +16,8 @@ import kotlinx.coroutines.flow.asStateFlow
  * Stores the access token, refresh token and a flag indicating whether the user has signed in.
  */
 class TokenStore(context: Context) {
+
+    private val gson = Gson()
 
     private val prefs: SharedPreferences = EncryptedSharedPreferences.create(
         context,
@@ -43,9 +47,14 @@ class TokenStore(context: Context) {
         get() = prefs.getString(KEY_REFRESH_TOKEN, null)
         set(value) = prefs.edit { putString(KEY_REFRESH_TOKEN, value) }
 
-    fun saveTokens(accessToken: String, refreshToken: String) {
+    var currentUser: UserDto?
+        get() = prefs.getString(KEY_USER, null)?.let { gson.fromJson(it, UserDto::class.java) }
+        set(value) = prefs.edit { putString(KEY_USER, value?.let { gson.toJson(it) }) }
+
+    fun saveTokens(accessToken: String, refreshToken: String, user: UserDto? = null) {
         this.accessToken = accessToken
         this.refreshToken = refreshToken
+        this.currentUser = user
         this.isAuthenticated = true
     }
 
@@ -58,5 +67,6 @@ class TokenStore(context: Context) {
         private const val KEY_ACCESS_TOKEN = "access_token"
         private const val KEY_REFRESH_TOKEN = "refresh_token"
         private const val KEY_IS_AUTHENTICATED = "is_authenticated"
+        private const val KEY_USER = "current_user"
     }
 }
