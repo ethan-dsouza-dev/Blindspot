@@ -63,6 +63,10 @@ class AuthRepository(
         }
     }
 
+    suspend fun signOut() = withContext(Dispatchers.IO) {
+        tokenStore.clear()
+    }
+
     private fun extractIdToken(response: GetCredentialResponse): String? {
         val credential = response.credential
         if (credential !is CustomCredential || credential.type != GoogleIdTokenCredential.TYPE_GOOGLE_ID_TOKEN_CREDENTIAL) {

@@ -47,6 +47,7 @@ private const val SAVED_PLACE_LABEL = "Saved"
 @Composable
 fun ProfileScreen(
     viewModel: ProfileViewModel = koinViewModel(),
+    onSignOut: () -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
@@ -54,7 +55,7 @@ fun ProfileScreen(
         uiState = uiState,
         onToggleUnits = viewModel::onToggleUnits,
         onToggleNotifications = viewModel::onToggleNotifications,
-        onSignOut = viewModel::onSignOut,
+        onSignOut = onSignOut,
         onRetry = viewModel::loadProfile,
     )
 }

@@ -38,6 +38,13 @@ class AuthViewModel(
         }
     }
 
+    fun signOut() {
+        viewModelScope.launch {
+            authRepository.signOut()
+            uiState = SignInUiState.Idle
+        }
+    }
+
     fun consumeError() {
         if (uiState is SignInUiState.Error) {
             uiState = SignInUiState.Idle

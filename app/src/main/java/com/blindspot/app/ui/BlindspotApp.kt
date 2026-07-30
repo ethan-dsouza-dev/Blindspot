@@ -12,6 +12,7 @@ import androidx.compose.ui.Modifier
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.blindspot.app.auth.AuthViewModel
 import com.blindspot.app.auth.TokenStore
 import com.blindspot.app.data.model.Place
 import com.blindspot.app.navigation.AuthDestinations
@@ -23,6 +24,7 @@ import com.blindspot.app.ui.screens.FeedScreen
 import com.blindspot.app.ui.screens.MapsScreen
 import com.blindspot.app.ui.screens.ProfileScreen
 import com.blindspot.app.ui.screens.SignInScreen
+import org.koin.androidx.compose.koinViewModel
 import org.koin.compose.koinInject
 
 @Composable
@@ -30,6 +32,15 @@ fun BlindspotApp() {
     val navController = rememberNavController()
     val tokenStore: TokenStore = koinInject()
     var isAuthenticated by remember { mutableStateOf(tokenStore.isAuthenticated) }
+    val authViewModel: AuthViewModel = koinViewModel()
+    val onSignOut: () -> Unit = {
+        authViewModel.signOut()
+        isAuthenticated = false
+        navController.navigate(AuthDestinations.SIGN_IN) {
+            popUpTo(AuthDestinations.MAIN) { inclusive = true }
+            launchSingleTop = true
+        }
+    }
 
     // The venue the map should guide the user to; set by "Take me there" from any detail sheet.
     // Hoisted above the NavHost so it survives tab switches even though MapsScreen is unmounted
@@ -64,6 +75,7 @@ fun BlindspotApp() {
                         mapTarget = mapTarget,
                         onClearTarget = { mapTarget = null },
                         onNavigateToMaps = navigateToPlace,
+                        onSignOut = onSignOut,
                         onTabSelected = { selectedTab = it },
                     )
                 }
@@ -78,16 +90,15 @@ private fun MainContent(
     mapTarget: Place?,
     onClearTarget: () -> Unit,
     onNavigateToMaps: (Place) -> Unit,
+    onSignOut: () -> Unit,
     onTabSelected: (Destination) -> Unit,
 ) {
     Box(modifier = Modifier.fillMaxSize()) {
         when (selected) {
-            Destination.Maps -> MapsScreen(
-                targetPlace = mapTarget,
-                onClearTarget = onClearTarget,
-            )
+            Destination.Maps -> MapsScreen(targetPlace = mapTarget, onClearTarget = onClearTarget)
             Destination.Discovery -> DiscoveryScreen(onNavigateToMaps = onNavigateToMaps)
             Destination.Feed -> FeedScreen(onNavigateToMaps = onNavigateToMaps)
+            Destination.Profile -> ProfileScreen(onSignOut = onSignOut)
         }
 
         FloatingNavPill(
