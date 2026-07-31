@@ -17,16 +17,19 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.blindspot.app.data.model.Place
 import com.blindspot.app.ui.components.NearbyPlaceRow
 import com.blindspot.app.ui.components.PlaceInfoSheet
 import com.blindspot.app.ui.components.TrendingNowSection
+import com.blindspot.app.ui.discovery.PlacesViewModel
 import com.blindspot.app.ui.feed.TrendingPlaceItem
-import com.blindspot.app.ui.feed.dummyTrendingItems
 import com.blindspot.app.ui.theme.AuroraTokens
+import com.blindspot.app.util.GeoUtils
+import org.koin.androidx.compose.koinViewModel
 
 /**
- * Explore tab: a Trending Now rail plus a Near You list (dummy data for design iteration).
+ * Feed tab: a Trending Now rail plus a Near You list loaded from [PlacesViewModel.nearbyPlaces].
  * Additional sections (Open Late, For You, etc.) can be added as further LazyColumn items.
  *
  * Tapping any venue opens the shared [PlaceInfoSheet]; its "Take me there" action calls
@@ -37,11 +40,20 @@ import com.blindspot.app.ui.theme.AuroraTokens
 fun FeedScreen(
     onNavigateToMaps: (Place) -> Unit,
     modifier: Modifier = Modifier,
+    viewModel: PlacesViewModel = koinViewModel(),
 ) {
+    val places by viewModel.nearbyPlaces.collectAsStateWithLifecycle()
     var selectedItem by remember { mutableStateOf<TrendingPlaceItem?>(null) }
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
-    val nearbyItems = remember { dummyTrendingItems.sortedBy { it.place.distanceMeters } }
+    val nearbyItems = remember(places) {
+        places.map { place ->
+            TrendingPlaceItem(
+                place = place,
+                distanceLabel = place.distanceMeters?.let(GeoUtils::formatDistance) ?: "",
+            )
+        }.sortedBy { it.place.distanceMeters ?: Double.MAX_VALUE }
+    }
 
     LazyColumn(
         modifier = modifier
@@ -51,7 +63,7 @@ fun FeedScreen(
     ) {
         item {
             Text(
-                text = "Explore",
+                text = "Feed",
                 style = MaterialTheme.typography.headlineLarge,
                 color = AuroraTokens.TextPrimary,
                 modifier = Modifier.padding(start = 20.dp, top = 24.dp),
@@ -59,7 +71,7 @@ fun FeedScreen(
         }
         item {
             TrendingNowSection(
-                items = dummyTrendingItems,
+                items = nearbyItems,
                 onCardClick = { selectedItem = it },
                 modifier = Modifier.padding(top = 28.dp),
             )

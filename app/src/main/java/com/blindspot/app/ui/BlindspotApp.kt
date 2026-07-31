@@ -11,6 +11,8 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.navigation.NavBackStackEntry
+import androidx.navigation.NavController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
@@ -21,6 +23,7 @@ import com.blindspot.app.navigation.AuthDestinations
 import com.blindspot.app.navigation.Destination
 import com.blindspot.app.ui.components.FloatingNavPill
 import com.blindspot.app.ui.components.aurora.AuroraBackground
+import com.blindspot.app.ui.discovery.PlacesViewModel
 import com.blindspot.app.ui.screens.DiscoveryScreen
 import com.blindspot.app.ui.screens.FeedScreen
 import com.blindspot.app.ui.screens.MapsScreen
@@ -78,6 +81,7 @@ fun BlindspotApp() {
                 }
                 composable(AuthDestinations.MAIN) {
                     MainContent(
+                        navController = navController,
                         selected = selectedTab,
                         mapTarget = mapTarget,
                         onClearTarget = { mapTarget = null },
@@ -93,6 +97,7 @@ fun BlindspotApp() {
 
 @Composable
 private fun MainContent(
+    navController: NavController,
     selected: Destination,
     mapTarget: Place?,
     onClearTarget: () -> Unit,
@@ -100,11 +105,20 @@ private fun MainContent(
     onSignOut: () -> Unit,
     onTabSelected: (Destination) -> Unit,
 ) {
+    val mainEntry: NavBackStackEntry = navController.getBackStackEntry(AuthDestinations.MAIN)
+    val sharedPlacesViewModel: PlacesViewModel = koinViewModel(viewModelStoreOwner = mainEntry)
+
     Box(modifier = Modifier.fillMaxSize()) {
         when (selected) {
             Destination.Maps -> MapsScreen(targetPlace = mapTarget, onClearTarget = onClearTarget)
-            Destination.Discovery -> DiscoveryScreen(onNavigateToMaps = onNavigateToMaps)
-            Destination.Feed -> FeedScreen(onNavigateToMaps = onNavigateToMaps)
+            Destination.Discovery -> DiscoveryScreen(
+                onNavigateToMaps = onNavigateToMaps,
+                viewModel = sharedPlacesViewModel,
+            )
+            Destination.Feed -> FeedScreen(
+                onNavigateToMaps = onNavigateToMaps,
+                viewModel = sharedPlacesViewModel,
+            )
             Destination.Profile -> ProfileScreen(onSignOut = onSignOut)
         }
 

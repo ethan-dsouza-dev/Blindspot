@@ -39,7 +39,7 @@ import com.blindspot.app.ui.components.PriceFilterDropdown
 import com.blindspot.app.ui.components.RadiusSlider
 import com.blindspot.app.ui.components.aurora.AuroraPlaceBanner
 import com.blindspot.app.ui.discovery.DiscoveryUiState
-import com.blindspot.app.ui.discovery.DiscoveryViewModel
+import com.blindspot.app.ui.discovery.PlacesViewModel
 import com.blindspot.app.ui.theme.AuroraTokens
 import org.koin.androidx.compose.koinViewModel
 
@@ -48,7 +48,7 @@ import org.koin.androidx.compose.koinViewModel
 fun DiscoveryScreen(
     onNavigateToMaps: (Place) -> Unit,
     modifier: Modifier = Modifier,
-    viewModel: DiscoveryViewModel = koinViewModel(),
+    viewModel: PlacesViewModel = koinViewModel(),
 ) {
     PermissionGate(
         modifier = modifier,

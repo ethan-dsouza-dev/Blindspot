@@ -19,7 +19,7 @@ import kotlin.math.roundToInt
 /**
  * "Midnight Aurora" search-radius control. The thumb tracks continuously for a smooth feel;
  * [onRadiusChange] fires on every drag tick so the label stays live, while the actual network
- * reload is debounced upstream (see DiscoveryViewModel.setRadius).
+ * reload is debounced upstream (see PlacesViewModel.setRadius).
  *
  * @param radiusMeters current radius, clamped to [PlaceRepository.MIN_RADIUS_METERS] ..
  *   [PlaceRepository.MAX_RADIUS_METERS].

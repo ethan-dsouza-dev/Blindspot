@@ -7,6 +7,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import com.blindspot.app.auth.TokenStore
 
 class ProfileViewModel(
@@ -24,7 +26,7 @@ class ProfileViewModel(
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, error = null) }
             try {
-                val user = tokenStore.currentUser
+                val user = withContext(Dispatchers.IO) { tokenStore.currentUser }
                 _uiState.update {
                     it.copy(
                         isLoading = false,
