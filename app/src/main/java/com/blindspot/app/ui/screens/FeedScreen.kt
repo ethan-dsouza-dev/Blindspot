@@ -29,7 +29,7 @@ import com.blindspot.app.util.GeoUtils
 import org.koin.androidx.compose.koinViewModel
 
 /**
- * Feed tab: a Trending Now rail plus a Near You list (dummy data for design iteration).
+ * Feed tab: a Trending Now rail plus a Near You list loaded from [PlacesViewModel.nearbyPlaces].
  * Additional sections (Open Late, For You, etc.) can be added as further LazyColumn items.
  *
  * Tapping any venue opens the shared [PlaceInfoSheet]; its "Take me there" action calls
