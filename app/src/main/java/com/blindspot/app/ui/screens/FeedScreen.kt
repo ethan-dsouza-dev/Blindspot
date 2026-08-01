@@ -59,21 +59,21 @@ fun FeedScreen(
         modifier = modifier
             .fillMaxSize()
             .statusBarsPadding(),
-        contentPadding = PaddingValues(bottom = 100.dp),
+        contentPadding = PaddingValues(bottom = 96.dp),
     ) {
         item {
             Text(
                 text = "Feed",
                 style = MaterialTheme.typography.headlineLarge,
                 color = AuroraTokens.TextPrimary,
-                modifier = Modifier.padding(start = 20.dp, top = 24.dp),
+                modifier = Modifier.padding(start = 24.dp, top = 24.dp),
             )
         }
         item {
             TrendingNowSection(
                 items = nearbyItems,
                 onCardClick = { selectedItem = it },
-                modifier = Modifier.padding(top = 28.dp),
+                modifier = Modifier.padding(top = 32.dp),
             )
         }
         item {
@@ -81,7 +81,7 @@ fun FeedScreen(
                 text = "Near you",
                 style = MaterialTheme.typography.titleLarge,
                 color = AuroraTokens.TextPrimary,
-                modifier = Modifier.padding(start = 20.dp, top = 28.dp, bottom = 4.dp),
+                modifier = Modifier.padding(start = 24.dp, top = 32.dp, bottom = 4.dp),
             )
         }
         items(nearbyItems, key = { it.place.id }) { item ->

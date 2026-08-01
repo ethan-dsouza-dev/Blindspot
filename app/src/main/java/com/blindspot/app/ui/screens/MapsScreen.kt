@@ -37,8 +37,8 @@ import com.blindspot.app.data.model.Place
 import com.blindspot.app.data.repository.RouteRepository
 import com.blindspot.app.ui.components.PermissionGate
 import com.blindspot.app.ui.components.PlaceInfoSheet
+import com.blindspot.app.ui.components.aurora.AuroraFloating
 import com.blindspot.app.ui.components.aurora.AuroraPlaceBanner
-import com.blindspot.app.ui.components.aurora.AuroraSurface
 import com.blindspot.app.ui.theme.AuroraTokens
 import com.blindspot.app.util.GeoUtils
 import kotlinx.coroutines.launch
@@ -245,11 +245,11 @@ fun MapsScreen(
                     .navigationBarsPadding()
                     .padding(bottom = 96.dp),
             ) {
-                AuroraSurface(
+                AuroraFloating(
                     shape = CircleShape,
                     modifier = Modifier
                         .align(Alignment.End)
-                        .padding(end = 20.dp, bottom = 12.dp)
+                        .padding(end = 24.dp, bottom = 12.dp)
                         .size(48.dp)
                         .clip(CircleShape)
                         .clickable(enabled = userPosition != null) {
@@ -282,7 +282,7 @@ fun MapsScreen(
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(horizontal = 20.dp),
+                            .padding(horizontal = 24.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         AuroraPlaceBanner(
@@ -291,11 +291,11 @@ fun MapsScreen(
                             onClick = { sheetVisible = true },
                             modifier = Modifier.weight(1f),
                         )
-                        AuroraSurface(
+                        AuroraFloating(
                             shape = CircleShape,
                             modifier = Modifier
                                 .padding(start = 12.dp)
-                                .size(44.dp)
+                                .size(48.dp)
                                 .clip(CircleShape)
                                 .clickable(onClick = onClearTarget),
                         ) {

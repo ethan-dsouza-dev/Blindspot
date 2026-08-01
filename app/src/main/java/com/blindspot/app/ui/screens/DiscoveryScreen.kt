@@ -27,6 +27,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -59,6 +61,7 @@ fun DiscoveryScreen(
         val state by viewModel.uiState.collectAsStateWithLifecycle()
         var sheetVisible by remember { mutableStateOf(false) }
         val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+        val haptic = LocalHapticFeedback.current
 
         DiscoveryContent(
             state = state,
@@ -68,6 +71,7 @@ fun DiscoveryScreen(
             onRadiusChange = viewModel::setRadius,
             onPriceChange = viewModel::setPriceLevel,
             onRefresh = viewModel::refresh,
+            onCompassLock = { haptic.performHapticFeedback(HapticFeedbackType.VirtualKey) },
             modifier = Modifier.fillMaxSize(),
         )
 
@@ -96,12 +100,13 @@ private fun DiscoveryContent(
     onRadiusChange: (Int) -> Unit,
     onPriceChange: (Int?) -> Unit,
     onRefresh: () -> Unit,
+    onCompassLock: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(
         modifier = modifier
             .statusBarsPadding()
-            .padding(horizontal = 20.dp),
+            .padding(horizontal = 24.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Row(
@@ -118,7 +123,7 @@ private fun DiscoveryContent(
                 )
                 Text(
                     text = "Pointing you to the nearest spot",
-                    style = MaterialTheme.typography.bodySmall,
+                    style = MaterialTheme.typography.bodyMedium,
                     color = AuroraTokens.TextSecondary,
                     modifier = Modifier.padding(top = 4.dp),
                 )
@@ -168,13 +173,14 @@ private fun DiscoveryContent(
                 DiscoveryUiState.Status.Content -> Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
-                    CompassView(rotationDegrees = state.needleRotation)
+                    CompassView(
+                        rotationDegrees = state.needleRotation,
+                        onLockOn = onCompassLock,
+                    )
                     if (state.distanceLabel.isNotEmpty()) {
                         Text(
                             text = state.distanceLabel,
-                            style = MaterialTheme.typography.headlineMedium.copy(
-                                fontFeatureSettings = "tnum",
-                            ),
+                            style = MaterialTheme.typography.displayMedium,
                             color = AuroraTokens.TextPrimary,
                             modifier = Modifier.padding(top = 24.dp),
                         )
@@ -196,8 +202,7 @@ private fun DiscoveryContent(
                 onRadiusChange = onRadiusChange,
                 modifier = Modifier.padding(
                     top = 8.dp,
-                    // Clear the floating nav pill when no banner follows the slider.
-                    bottom = if (state.status == DiscoveryUiState.Status.Empty) 88.dp else 0.dp,
+                    bottom = if (state.status == DiscoveryUiState.Status.Empty) 96.dp else 0.dp,
                 ),
             )
         }
@@ -211,11 +216,11 @@ private fun DiscoveryContent(
                 )
                 TextButton(
                     onClick = onSkip,
-                    modifier = Modifier.padding(top = 4.dp, bottom = 88.dp),
+                    modifier = Modifier.padding(top = 4.dp, bottom = 96.dp),
                 ) {
                     Text(
                         text = "Not feeling it? Next spot",
-                        style = MaterialTheme.typography.labelLarge,
+                        style = MaterialTheme.typography.bodyMedium,
                         color = AuroraTokens.TextSecondary,
                     )
                 }
@@ -238,7 +243,7 @@ private fun CenterMessage(
         Text(
             text = title,
             style = MaterialTheme.typography.titleLarge,
-            fontWeight = FontWeight.SemiBold,
+            fontWeight = FontWeight.Bold,
             color = AuroraTokens.TextPrimary,
             textAlign = TextAlign.Center,
         )
@@ -250,7 +255,7 @@ private fun CenterMessage(
         )
         if (actionLabel != null && onAction != null) {
             TextButton(onClick = onAction) {
-                Text(actionLabel, color = AuroraTokens.AccentCyan, fontWeight = FontWeight.SemiBold)
+                Text(actionLabel, color = AuroraTokens.AccentCyan, fontWeight = FontWeight.Bold)
             }
         }
     }

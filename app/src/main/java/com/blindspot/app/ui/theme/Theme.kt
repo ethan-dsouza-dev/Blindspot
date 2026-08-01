@@ -5,9 +5,8 @@ import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
 
 /**
- * Single dark "Midnight Aurora" scheme built from [AuroraTokens]. The app is dark-only by
- * design (night-out discovery product); dynamic color is intentionally disabled so the curated
- * palette is preserved across devices.
+ * Single dark "Midnight Aurora" scheme built from [AuroraTokens].
+ * Dark-only by design (night-out discovery product); dynamic color disabled.
  */
 private val AuroraColorScheme = darkColorScheme(
     primary = AuroraTokens.AccentCyan,

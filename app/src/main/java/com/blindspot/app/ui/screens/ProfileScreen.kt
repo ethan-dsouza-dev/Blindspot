@@ -11,9 +11,11 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
@@ -35,13 +37,12 @@ import coil3.compose.AsyncImage
 import com.blindspot.app.data.model.Place
 import com.blindspot.app.ui.components.NearbyPlaceRow
 import com.blindspot.app.ui.components.PlaceInfoSheet
-import com.blindspot.app.ui.components.aurora.AuroraSurface
+import com.blindspot.app.ui.components.aurora.AuroraCard
 import com.blindspot.app.ui.feed.TrendingPlaceItem
 import com.blindspot.app.ui.profile.ProfileUiState
 import com.blindspot.app.ui.profile.ProfileViewModel
 import com.blindspot.app.ui.theme.AuroraTokens
 import org.koin.androidx.compose.koinViewModel
-import androidx.compose.material3.ButtonDefaults
 
 private const val SAVED_PLACE_LABEL = "Saved"
 
@@ -95,7 +96,7 @@ private fun ProfileScreenContent(
             Text(
                 text = uiState.error,
                 color = AuroraTokens.TextSecondary,
-                fontSize = 14.sp,
+                style = MaterialTheme.typography.bodyMedium,
                 modifier = Modifier.padding(bottom = 16.dp),
             )
             Button(onClick = onRetry) {
@@ -114,14 +115,14 @@ private fun ProfileScreenContent(
         item {
             Text(
                 text = "Profile",
-                fontSize = 28.sp,
+                style = MaterialTheme.typography.headlineLarge,
                 color = AuroraTokens.TextPrimary,
                 modifier = Modifier.padding(top = 24.dp),
             )
         }
 
         item {
-            AuroraSurface {
+            AuroraCard {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -151,12 +152,12 @@ private fun ProfileScreenContent(
                     Column {
                         Text(
                             text = uiState.name,
-                            fontSize = 18.sp,
+                            style = MaterialTheme.typography.titleLarge,
                             color = AuroraTokens.TextPrimary,
                         )
                         Text(
                             text = uiState.email,
-                            fontSize = 13.sp,
+                            style = MaterialTheme.typography.bodyMedium,
                             color = AuroraTokens.TextSecondary,
                         )
                     }
@@ -165,7 +166,7 @@ private fun ProfileScreenContent(
         }
 
         item {
-            AuroraSurface {
+            AuroraCard {
                 Column(modifier = Modifier.padding(16.dp)) {
                     SettingRow(
                         label = "Distance in kilometers",
@@ -185,7 +186,7 @@ private fun ProfileScreenContent(
             item {
                 Text(
                     text = "Saved places",
-                    fontSize = 16.sp,
+                    style = MaterialTheme.typography.titleLarge,
                     color = AuroraTokens.TextPrimary,
                 )
             }
@@ -235,7 +236,7 @@ private fun SettingRow(
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(text = label, color = AuroraTokens.TextSecondary, fontSize = 14.sp)
+        Text(text = label, color = AuroraTokens.TextSecondary, style = MaterialTheme.typography.bodyMedium)
         Switch(checked = checked, onCheckedChange = onCheckedChange)
     }
 }

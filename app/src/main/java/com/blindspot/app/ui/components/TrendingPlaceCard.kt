@@ -22,13 +22,14 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.blindspot.app.R
-import com.blindspot.app.ui.components.aurora.AuroraSurface
+import com.blindspot.app.ui.components.aurora.AuroraCard
 import com.blindspot.app.ui.feed.TrendingPlaceItem
 import com.blindspot.app.ui.theme.AuroraTokens
 import com.blindspot.app.util.categoryLabel
@@ -46,7 +47,7 @@ fun TrendingPlaceCard(
 ) {
     val place = item.place
 
-    AuroraSurface(
+    AuroraCard(
         modifier = modifier.width(160.dp),
         shape = RoundedCornerShape(16.dp),
     ) {
@@ -64,28 +65,32 @@ fun TrendingPlaceCard(
                     contentScale = ContentScale.Crop,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(120.dp),
+                        .height(120.dp)
+                        .clip(RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp)),
                 )
                 place.ratingLabel?.let { rating ->
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
+                    Box(
                         modifier = Modifier
-                            .align(Alignment.BottomStart)
+                            .align(Alignment.TopEnd)
                             .padding(8.dp)
-                            .background(Color.Black.copy(alpha = 0.6f), CircleShape)
-                            .padding(horizontal = 8.dp, vertical = 3.dp),
+                            .background(Color.Black.copy(alpha = 0.6f), RoundedCornerShape(12.dp))
+                            .padding(horizontal = 8.dp, vertical = 4.dp),
                     ) {
-                        Icon(
-                            imageVector = Icons.Filled.Star,
-                            contentDescription = null,
-                            tint = AuroraTokens.RatingStar,
-                            modifier = Modifier.size(12.dp),
-                        )
-                        Text(
-                            text = " $rating",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = AuroraTokens.TextPrimary,
-                        )
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Icon(
+                                imageVector = Icons.Filled.Star,
+                                contentDescription = null,
+                                tint = AuroraTokens.RatingStar,
+                                modifier = Modifier.size(12.dp),
+                            )
+                            Text(
+                                text = " $rating",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = AuroraTokens.TextPrimary,
+                            )
+                        }
                     }
                 }
             }
@@ -97,14 +102,14 @@ fun TrendingPlaceCard(
             ) {
                 Text(
                     text = place.name,
-                    style = MaterialTheme.typography.titleSmall,
+                    style = MaterialTheme.typography.titleMedium,
                     color = AuroraTokens.TextPrimary,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
                 Text(
                     text = "${item.distanceLabel} · ${place.categoryLabel}",
-                    style = MaterialTheme.typography.labelSmall,
+                    style = MaterialTheme.typography.bodyMedium,
                     color = AuroraTokens.TextSecondary,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,

@@ -26,7 +26,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.blindspot.app.auth.AuthViewModel
 import com.blindspot.app.auth.SignInUiState
-import com.blindspot.app.ui.components.aurora.AuroraSurface
+import com.blindspot.app.ui.components.aurora.AuroraCard
 import com.blindspot.app.ui.theme.AuroraTokens
 import org.koin.androidx.compose.koinViewModel
 
@@ -62,7 +62,7 @@ fun SignInScreen(
             )
             Text(
                 text = "Discover your next night out",
-                style = MaterialTheme.typography.bodyLarge,
+                style = MaterialTheme.typography.bodyMedium,
                 color = AuroraTokens.TextSecondary,
                 textAlign = TextAlign.Center,
             )
@@ -98,13 +98,13 @@ fun SignInScreen(
                 Spacer(modifier = Modifier.size(ButtonDefaults.IconSpacing))
                 Text(
                     text = if (isLoading) "Signing in..." else "Continue with Google",
-                    style = MaterialTheme.typography.labelLarge,
+                    style = MaterialTheme.typography.bodyMedium,
                 )
             }
 
             if (state is SignInUiState.Error) {
                 Spacer(modifier = Modifier.height(8.dp))
-                AuroraSurface(
+                AuroraCard(
                     color = AuroraTokens.Negative.copy(alpha = 0.15f),
                     borderColor = AuroraTokens.Negative.copy(alpha = 0.4f),
                 ) {

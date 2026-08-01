@@ -23,6 +23,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.blindspot.app.data.model.Place
+import com.blindspot.app.ui.components.cardPress
 import com.blindspot.app.ui.theme.AuroraTokens
 import com.blindspot.app.util.categoryLabel
 
@@ -38,8 +39,10 @@ fun AuroraPlaceBanner(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    AuroraSurface(
-        modifier = modifier.fillMaxWidth(),
+    AuroraCard(
+        modifier = modifier
+            .fillMaxWidth()
+            .cardPress(),
         shape = RoundedCornerShape(20.dp),
     ) {
         Row(
@@ -70,14 +73,14 @@ fun AuroraPlaceBanner(
                 Text(
                     text = place.name,
                     style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.SemiBold,
+                    fontWeight = FontWeight.Bold,
                     color = AuroraTokens.TextPrimary,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
                 Text(
                     text = "$distanceLabel away · ${place.categoryLabel}",
-                    style = MaterialTheme.typography.bodySmall,
+                    style = MaterialTheme.typography.bodyMedium,
                     color = AuroraTokens.TextSecondary,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
@@ -86,7 +89,8 @@ fun AuroraPlaceBanner(
             Icon(
                 imageVector = Icons.Filled.ChevronRight,
                 contentDescription = "More info",
-                tint = AuroraTokens.TextSecondary,
+                tint = AuroraTokens.TextTertiary,
+                modifier = Modifier.size(16.dp),
             )
         }
     }

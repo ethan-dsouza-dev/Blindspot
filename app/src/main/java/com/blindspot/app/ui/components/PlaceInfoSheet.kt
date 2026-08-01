@@ -1,8 +1,11 @@
 package com.blindspot.app.ui.components
 
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -14,8 +17,6 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -24,7 +25,6 @@ import androidx.compose.material.icons.filled.NearMe
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -34,14 +34,19 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import com.blindspot.app.R
 import com.blindspot.app.data.model.Place
+import com.blindspot.app.ui.components.aurora.AuroraCard
 import com.blindspot.app.ui.theme.AuroraTokens
 import com.blindspot.app.util.categoryLabel
 import com.blindspot.app.util.priceLabel
@@ -52,7 +57,7 @@ import com.blindspot.app.util.ratingLabel
  * the venue presentation is identical across the app.
  *
  * CTA hierarchy: "Take me there" ([onViewOnMap]) is the primary filled action; "Next"
- * ([onSkip], optional) is the tonal secondary; back is a tonal icon button.
+ * ([onSkip], optional) is the tonal secondary; back is a circular tonal icon button.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -76,81 +81,151 @@ fun PlaceInfoSheet(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .navigationBarsPadding()
-                .padding(start = 20.dp, end = 20.dp, bottom = 12.dp),
+                .navigationBarsPadding(),
         ) {
-            Text(
-                text = place.name,
-                style = MaterialTheme.typography.headlineSmall,
-                color = AuroraTokens.TextPrimary,
-            )
-
-            MetadataRow(
-                place = place,
-                distanceLabel = distanceLabel,
-                modifier = Modifier.padding(top = 8.dp),
-            )
-
-            if (place.description.isNotBlank()) {
-                Text(
-                    text = place.description,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = AuroraTokens.TextSecondary,
-                    maxLines = 3,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.padding(top = 12.dp),
-                )
-            }
-
-            PlacePhotos(
+            // Hero image with gradient overlay and title.
+            HeroImage(
                 photos = place.imageUrl.orEmpty().filter { it.isNotBlank() },
                 contentDescription = place.name,
-                modifier = Modifier.padding(top = 16.dp),
+                placeName = place.name,
+                distanceLabel = distanceLabel,
+                modifier = Modifier.fillMaxWidth(),
             )
 
-            Row(
+            Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(top = 20.dp),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                verticalAlignment = Alignment.CenterVertically,
+                    .padding(start = 24.dp, end = 24.dp, bottom = 24.dp),
             ) {
-                if (showBack) {
-                    SecondaryIconButton(
-                        icon = Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = "Point to the previous place",
-                        onClick = onBack,
+                MetadataChips(
+                    place = place,
+                    distanceLabel = distanceLabel,
+                    modifier = Modifier.padding(top = 16.dp),
+                )
+
+                if (place.description.isNotBlank()) {
+                    Text(
+                        text = place.description,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = AuroraTokens.TextSecondary,
+                        maxLines = 3,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.padding(top = 16.dp),
                     )
                 }
-                if (onSkip != null) {
-                    SecondaryButton(
-                        label = "Next",
-                        onClick = onSkip,
-                        modifier = Modifier.weight(1f),
-                    )
-                }
-                if (onViewOnMap != null) {
-                    PrimaryButton(
-                        label = "Take me there",
-                        icon = Icons.Filled.NearMe,
-                        onClick = { onViewOnMap(); onDismiss() },
-                        modifier = Modifier.weight(1.4f),
-                    )
-                } else if (onSkip == null) {
-                    // No actions besides back — shouldn't happen, but keep the row balanced.
-                    Spacer(modifier = Modifier.weight(1f))
+
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 24.dp),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    if (showBack) {
+                        CircleIconButton(
+                            icon = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Point to the previous place",
+                            onClick = onBack,
+                        )
+                    }
+                    if (onSkip != null) {
+                        SecondaryButton(
+                            label = "Next",
+                            onClick = onSkip,
+                            modifier = Modifier.weight(1f),
+                        )
+                    }
+                    if (onViewOnMap != null) {
+                        PrimaryButton(
+                            label = "Take me there",
+                            icon = Icons.Filled.NearMe,
+                            onClick = { onViewOnMap(); onDismiss() },
+                            modifier = Modifier.weight(1.4f),
+                        )
+                    } else if (onSkip == null) {
+                        Spacer(modifier = Modifier.weight(1f))
+                    }
                 }
             }
         }
     }
 }
 
-/**
- * Single unified metadata line: `386 m · ★ 4.5 · $$ · Fine Dining`. Distance carries the only
- * accent; everything else stays quiet so the row scans as one unit.
- */
+/** Hero image with gradient overlay and place name + distance. */
 @Composable
-private fun MetadataRow(
+private fun HeroImage(
+    photos: List<String>,
+    contentDescription: String,
+    placeName: String,
+    distanceLabel: String,
+    modifier: Modifier = Modifier,
+) {
+    val photoShape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
+
+    Box(
+        modifier = modifier
+            .height(240.dp)
+            .clip(photoShape),
+        contentAlignment = Alignment.BottomStart,
+    ) {
+        if (photos.isEmpty()) {
+            Image(
+                painter = painterResource(R.drawable.bar),
+                contentDescription = contentDescription,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.fillMaxSize(),
+            )
+        } else {
+            AsyncImage(
+                model = photos.first(),
+                contentDescription = contentDescription,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.fillMaxSize(),
+            )
+        }
+
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(
+                    brush = Brush.verticalGradient(
+                        colors = listOf(
+                            Color.Transparent,
+                            AuroraTokens.BaseDeep.copy(alpha = 0.7f),
+                            AuroraTokens.BaseDeep,
+                        ),
+                    ),
+                ),
+        )
+
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(start = 24.dp, end = 24.dp, bottom = 24.dp),
+        ) {
+            Text(
+                text = placeName,
+                style = MaterialTheme.typography.displayMedium,
+                color = AuroraTokens.TextPrimary,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+            )
+            Text(
+                text = "$distanceLabel away",
+                style = MaterialTheme.typography.bodyMedium.copy(
+                    fontWeight = FontWeight.Bold,
+                    fontFeatureSettings = "tnum",
+                ),
+                color = AuroraTokens.AccentCyan,
+                modifier = Modifier.padding(top = 4.dp),
+            )
+        }
+    }
+}
+
+/** Metadata as chips: distance (accent), rating, price, category (elevated). */
+@Composable
+private fun MetadataChips(
     place: Place,
     distanceLabel: String,
     modifier: Modifier = Modifier,
@@ -160,53 +235,71 @@ private fun MetadataRow(
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(
+        Chip(
             text = distanceLabel,
-            style = MaterialTheme.typography.labelLarge,
-            color = AuroraTokens.AccentCyan,
+            textColor = AuroraTokens.AccentCyan,
+            backgroundColor = AuroraTokens.AccentCyan.copy(alpha = 0.10f),
+            icon = null,
         )
         place.ratingLabel?.let { rating ->
-            MetadataDot()
-            Icon(
-                imageVector = Icons.Filled.Star,
-                contentDescription = null,
-                tint = AuroraTokens.RatingStar,
-                modifier = Modifier.size(14.dp),
-            )
-            Text(
+            Chip(
                 text = rating,
-                style = MaterialTheme.typography.labelLarge,
-                color = AuroraTokens.TextPrimary,
+                textColor = AuroraTokens.TextPrimary,
+                backgroundColor = AuroraTokens.SurfaceElevated,
+                icon = {
+                    Icon(
+                        imageVector = Icons.Filled.Star,
+                        contentDescription = null,
+                        tint = AuroraTokens.RatingStar,
+                        modifier = Modifier.size(14.dp),
+                    )
+                },
             )
         }
         place.priceLabel?.let { price ->
-            MetadataDot()
-            Text(
+            Chip(
                 text = price,
-                style = MaterialTheme.typography.labelLarge,
-                color = AuroraTokens.TextSecondary,
+                textColor = AuroraTokens.TextSecondary,
+                backgroundColor = AuroraTokens.SurfaceElevated,
+                icon = null,
             )
         }
         if (place.categoryLabel.isNotBlank()) {
-            MetadataDot()
-            Text(
+            Chip(
                 text = place.categoryLabel,
-                style = MaterialTheme.typography.labelLarge,
-                color = AuroraTokens.TextSecondary,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
+                textColor = AuroraTokens.TextSecondary,
+                backgroundColor = AuroraTokens.SurfaceElevated,
+                icon = null,
             )
         }
     }
 }
 
 @Composable
-private fun MetadataDot() {
-    Text(
-        text = "·",
-        style = MaterialTheme.typography.labelLarge,
-        color = AuroraTokens.TextSecondary,
-    )
+private fun Chip(
+    text: String,
+    textColor: Color,
+    backgroundColor: Color,
+    icon: (@Composable () -> Unit)?,
+) {
+    Row(
+        modifier = Modifier
+            .clip(RoundedCornerShape(16.dp))
+            .background(backgroundColor)
+            .border(1.dp, AuroraTokens.SurfaceBorder, RoundedCornerShape(16.dp))
+            .padding(horizontal = 12.dp, vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
+        icon?.invoke()
+        Text(
+            text = text,
+            style = MaterialTheme.typography.bodyMedium,
+            color = textColor,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
+    }
 }
 
 /** Filled accent CTA — the one and only primary button style. */
@@ -219,7 +312,8 @@ private fun PrimaryButton(
 ) {
     Button(
         onClick = onClick,
-        modifier = modifier.height(52.dp),
+        modifier = modifier.height(56.dp),
+        shape = RoundedCornerShape(16.dp),
         colors = ButtonDefaults.buttonColors(
             containerColor = AuroraTokens.AccentCyan,
             contentColor = AuroraTokens.OnAccent,
@@ -229,7 +323,7 @@ private fun PrimaryButton(
             Icon(
                 imageVector = icon,
                 contentDescription = null,
-                modifier = Modifier.size(18.dp),
+                modifier = Modifier.size(20.dp),
             )
             Spacer(modifier = Modifier.width(8.dp))
         }
@@ -241,7 +335,7 @@ private fun PrimaryButton(
     }
 }
 
-/** Tonal secondary button: elevated surface with a hairline border. */
+/** Tonal secondary button: elevated surface with an accent hairline border. */
 @Composable
 private fun SecondaryButton(
     label: String,
@@ -250,9 +344,9 @@ private fun SecondaryButton(
 ) {
     Button(
         onClick = onClick,
-        modifier = modifier
-            .height(52.dp)
-            .border(1.dp, AuroraTokens.SurfaceBorder, CircleShape),
+        modifier = modifier.height(56.dp),
+        shape = RoundedCornerShape(16.dp),
+        border = BorderStroke(1.dp, AuroraTokens.AccentCyan.copy(alpha = 0.10f)),
         colors = ButtonDefaults.buttonColors(
             containerColor = AuroraTokens.SurfaceElevated,
             contentColor = AuroraTokens.TextPrimary,
@@ -266,18 +360,17 @@ private fun SecondaryButton(
     }
 }
 
+/** Circular tonal icon button for back action. */
 @Composable
-private fun SecondaryIconButton(
+private fun CircleIconButton(
     icon: ImageVector,
     contentDescription: String,
     onClick: () -> Unit,
-    modifier: Modifier = Modifier,
 ) {
     Button(
         onClick = onClick,
-        modifier = modifier
-            .size(52.dp)
-            .border(1.dp, AuroraTokens.SurfaceBorder, CircleShape),
+        modifier = Modifier.size(56.dp),
+        shape = CircleShape,
         contentPadding = PaddingValues(0.dp),
         colors = ButtonDefaults.buttonColors(
             containerColor = AuroraTokens.SurfaceElevated,
@@ -289,69 +382,5 @@ private fun SecondaryIconButton(
             contentDescription = contentDescription,
             modifier = Modifier.size(20.dp),
         )
-    }
-}
-
-@Composable
-private fun PlacePhotos(
-    photos: List<String>,
-    contentDescription: String,
-    modifier: Modifier = Modifier,
-) {
-    val photoShape = RoundedCornerShape(16.dp)
-    val photoModifier = Modifier.border(1.dp, AuroraTokens.SurfaceBorder, photoShape)
-
-    if (photos.isEmpty()) {
-        Card(
-            shape = photoShape,
-            modifier = modifier
-                .fillMaxWidth()
-                .height(200.dp)
-                .then(photoModifier),
-        ) {
-            Image(
-                painter = painterResource(R.drawable.bar),
-                contentDescription = contentDescription,
-                contentScale = ContentScale.Crop,
-                modifier = Modifier.fillMaxSize(),
-            )
-        }
-    } else if (photos.size == 1) {
-        Card(
-            shape = photoShape,
-            modifier = modifier
-                .fillMaxWidth()
-                .height(200.dp)
-                .then(photoModifier),
-        ) {
-            AsyncImage(
-                model = photos.first(),
-                contentDescription = contentDescription,
-                contentScale = ContentScale.Crop,
-                modifier = Modifier.fillMaxSize(),
-            )
-        }
-    } else {
-        LazyRow(
-            modifier = modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            items(photos) { url ->
-                Card(
-                    shape = photoShape,
-                    modifier = Modifier
-                        .width(180.dp)
-                        .height(200.dp)
-                        .border(1.dp, AuroraTokens.SurfaceBorder, photoShape),
-                ) {
-                    AsyncImage(
-                        model = url,
-                        contentDescription = contentDescription,
-                        contentScale = ContentScale.Crop,
-                        modifier = Modifier.fillMaxSize(),
-                    )
-                }
-            }
-        }
     }
 }
