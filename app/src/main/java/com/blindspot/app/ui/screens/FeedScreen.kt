@@ -1,7 +1,10 @@
 package com.blindspot.app.ui.screens
 
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
@@ -15,10 +18,12 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.blindspot.app.data.model.Place
+import com.blindspot.app.ui.components.CategoryFilterChips
 import com.blindspot.app.ui.components.NearbyPlaceRow
 import com.blindspot.app.ui.components.PlaceInfoSheet
 import com.blindspot.app.ui.components.TrendingNowSection
@@ -26,11 +31,13 @@ import com.blindspot.app.ui.discovery.PlacesViewModel
 import com.blindspot.app.ui.feed.TrendingPlaceItem
 import com.blindspot.app.ui.theme.AuroraTokens
 import com.blindspot.app.util.GeoUtils
+import com.blindspot.app.util.categoryLabel
 import org.koin.androidx.compose.koinViewModel
 
 /**
- * Feed tab: a Trending Now rail plus a Near You list loaded from [PlacesViewModel.nearbyPlaces].
- * Additional sections (Open Late, For You, etc.) can be added as further LazyColumn items.
+ * Feed tab: a pinned header (title + category filter chips) above a scrollable Trending Now rail
+ * and Near You list loaded from [PlacesViewModel.nearbyPlaces]. Selecting a category filters both
+ * sections; a mismatch shows an inline empty state.
  *
  * Tapping any venue opens the shared [PlaceInfoSheet]; its "Take me there" action calls
  * [onNavigateToMaps] to guide the user on the Maps tab.
@@ -55,42 +62,66 @@ fun FeedScreen(
         }.sortedBy { it.place.distanceMeters ?: Double.MAX_VALUE }
     }
 
-    LazyColumn(
-        modifier = modifier
-            .fillMaxSize()
-            .statusBarsPadding(),
-        contentPadding = PaddingValues(bottom = 96.dp),
-    ) {
-        item {
+    val categories = remember(places) {
+        places.map { it.categoryLabel }
+            .filter { it.isNotBlank() }
+            .distinct()
+            .sorted()
+    }
+    var selectedCategory by remember { mutableStateOf<String?>(null) }
+    val filteredItems = remember(nearbyItems, selectedCategory) {
+        if (selectedCategory == null) nearbyItems
+        else nearbyItems.filter { it.place.categoryLabel == selectedCategory }
+    }
+
+    Column(modifier = modifier.fillMaxSize()) {
+        Column(modifier = Modifier.statusBarsPadding()) {
             Text(
                 text = "Feed",
                 style = MaterialTheme.typography.headlineLarge,
                 color = AuroraTokens.TextPrimary,
                 modifier = Modifier.padding(start = 24.dp, top = 24.dp),
             )
-        }
-        item {
-            TrendingNowSection(
-                items = nearbyItems,
-                onCardClick = { selectedItem = it },
-                modifier = Modifier.padding(top = 32.dp),
+            CategoryFilterChips(
+                categories = categories,
+                selected = selectedCategory,
+                onSelect = { selectedCategory = it },
+                modifier = Modifier.padding(top = 20.dp),
             )
         }
-        item {
-            Text(
-                text = "Near you",
-                style = MaterialTheme.typography.titleLarge,
-                color = AuroraTokens.TextPrimary,
-                modifier = Modifier.padding(start = 24.dp, top = 32.dp, bottom = 4.dp),
-            )
+
+        LazyColumn(
+            modifier = Modifier.weight(1f),
+            contentPadding = PaddingValues(top = 24.dp, bottom = 96.dp),
+        ) {
+            if (filteredItems.isNotEmpty()) {
+                item {
+                    TrendingNowSection(
+                        items = filteredItems,
+                        onCardClick = { selectedItem = it },
+                    )
+                }
+                item {
+                    Text(
+                        text = "Near you",
+                        style = MaterialTheme.typography.titleLarge,
+                        color = AuroraTokens.TextPrimary,
+                        modifier = Modifier.padding(start = 24.dp, top = 32.dp, bottom = 4.dp),
+                    )
+                }
+                items(filteredItems, key = { it.place.id }) { item ->
+                    NearbyPlaceRow(
+                        item = item,
+                        onClick = { selectedItem = item },
+                    )
+                }
+                // Future sections (Open Late, For You, etc.) go here as additional item { } blocks.
+            } else if (selectedCategory != null) {
+                item {
+                    FeedFilterEmptyState(category = selectedCategory!!)
+                }
+            }
         }
-        items(nearbyItems, key = { it.place.id }) { item ->
-            NearbyPlaceRow(
-                item = item,
-                onClick = { selectedItem = item },
-            )
-        }
-        // Future sections (Open Late, For You, etc.) go here as additional item { } blocks.
     }
 
     selectedItem?.let { item ->
@@ -102,6 +133,28 @@ fun FeedScreen(
             onBack = { selectedItem = null },
             showBack = false,
             onViewOnMap = { onNavigateToMaps(item.place) },
+        )
+    }
+}
+
+@Composable
+private fun FeedFilterEmptyState(category: String) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 24.dp, vertical = 48.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        Text(
+            text = "No $category right now",
+            style = MaterialTheme.typography.titleLarge,
+            color = AuroraTokens.TextPrimary,
+        )
+        Text(
+            text = "Try another filter or widen your search.",
+            style = MaterialTheme.typography.bodyMedium,
+            color = AuroraTokens.TextSecondary,
         )
     }
 }

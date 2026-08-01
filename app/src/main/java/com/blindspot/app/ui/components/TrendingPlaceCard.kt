@@ -23,6 +23,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
@@ -67,6 +68,19 @@ fun TrendingPlaceCard(
                         .fillMaxWidth()
                         .height(120.dp)
                         .clip(RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp)),
+                )
+                // Bottom scrim adds depth under the photo so the overlay chip stays legible.
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
+                        .fillMaxWidth()
+                        .height(56.dp)
+                        .background(
+                            Brush.verticalGradient(
+                                0f to Color.Transparent,
+                                1f to Color.Black.copy(alpha = 0.45f),
+                            ),
+                        ),
                 )
                 place.ratingLabel?.let { rating ->
                     Box(

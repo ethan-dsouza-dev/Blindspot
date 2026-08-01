@@ -29,7 +29,7 @@ class MockPlaceRepository : PlaceRepository {
                 id = "place_$index",
                 name = offset.name,
                 description = offset.description,
-                category = category,
+                category = offset.category,
                 latitude = placeLat,
                 longitude = placeLng,
                 imageUrl = offset.imageUrl,
@@ -47,6 +47,7 @@ class MockPlaceRepository : PlaceRepository {
     private data class SampleOffset(
         val name: String,
         val description: String,
+        val category: String,
         val latOffset: Double,
         val lngOffset: Double,
         val rating: Double,
@@ -60,6 +61,7 @@ class MockPlaceRepository : PlaceRepository {
             SampleOffset(
                 name = "The Hidden Flask",
                 description = "Cozy speakeasy with craft cocktails and dim, moody lighting.",
+                category = "speakeasy",
                 latOffset = 0.0018, lngOffset = 0.0009, rating = 4.6, priceLevel = 3,
                 imageUrl = listOf(
                     "https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?w=800",
@@ -70,6 +72,7 @@ class MockPlaceRepository : PlaceRepository {
             SampleOffset(
                 name = "Neon Alley",
                 description = "Buzzing rooftop bar with skyline views and house DJs on weekends.",
+                category = "bar",
                 latOffset = -0.0022, lngOffset = 0.0015, rating = 4.3, priceLevel = 2,
                 imageUrl = listOf(
                     "https://images.unsplash.com/photo-1566417713940-fe7c737a9ef2?w=800",
@@ -79,6 +82,7 @@ class MockPlaceRepository : PlaceRepository {
             SampleOffset(
                 name = "Cellar 9",
                 description = "Underground wine bar pouring natural wines and small plates.",
+                category = "wine_bar",
                 latOffset = 0.0009, lngOffset = -0.0026, rating = 4.8, priceLevel = 3,
                 imageUrl = listOf(
                     "https://images.unsplash.com/photo-1510812431401-41d2bd2722f3?w=800",
@@ -87,6 +91,7 @@ class MockPlaceRepository : PlaceRepository {
             SampleOffset(
                 name = "The Tap Room",
                 description = "Laid-back pub with 24 rotating local craft beers on tap.",
+                category = "pub",
                 latOffset = -0.0014, lngOffset = -0.0011, rating = 4.1, priceLevel = 1,
                 imageUrl = listOf(
                     "https://images.unsplash.com/photo-1436076863939-06870fe779c2?w=800",
@@ -96,6 +101,7 @@ class MockPlaceRepository : PlaceRepository {
             SampleOffset(
                 name = "Midnight Lounge",
                 description = "Late-night jazz lounge serving classic cocktails until 3am.",
+                category = "lounge",
                 latOffset = 0.0031, lngOffset = 0.0024, rating = 4.5, priceLevel = 2,
                 imageUrl = listOf(
                     "https://images.unsplash.com/photo-1572116469696-31de0f17cc34?w=800",
