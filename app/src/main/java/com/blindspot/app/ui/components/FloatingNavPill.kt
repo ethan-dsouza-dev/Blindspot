@@ -93,15 +93,18 @@ private fun RowScope.FloatingNavItem(
         label = "navItemTint",
     )
 
+    // Shared with clickable so navItemPress observes the press instead of a separate dead source.
+    val interactionSource = remember { MutableInteractionSource() }
+
     Column(
         modifier = Modifier
             .weight(1f)
             .clickable(
-                interactionSource = remember { MutableInteractionSource() },
+                interactionSource = interactionSource,
                 indication = null,
                 onClick = onClick,
             )
-            .navItemPress()
+            .navItemPress(interactionSource = interactionSource)
             .padding(vertical = 10.dp)
             .minTouchTarget(48.dp, 48.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
