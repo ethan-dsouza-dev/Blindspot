@@ -210,7 +210,13 @@ fun MapsScreen(
                 baseStyle = BaseStyle.Uri(OPENFREEMAP_STYLE_URL),
                 cameraState = cameraState,
                 options = MapOptions(
-                    ornamentOptions = OrnamentOptions.AllDisabled,
+                   ornamentOptions = OrnamentOptions(
+                        isLogoEnabled = false,
+                        isAttributionEnabled = true,
+                        attributionAlignment = Alignment.BottomStart,
+                        isCompassEnabled = false,
+                        isScaleBarEnabled = false,
+                    ),
                     gestureOptions = GestureOptions(isTiltEnabled = false),
                 ),
             ) {

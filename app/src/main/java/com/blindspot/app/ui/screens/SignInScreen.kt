@@ -75,7 +75,8 @@ fun SignInScreen(
             Button(
                 onClick = { activity?.let { viewModel.signInWithGoogle(it) } },
                 enabled = enabled,
-                shape = RoundedCornerShape(12.dp),
+                modifier = Modifier.height(56.dp),
+                shape = RoundedCornerShape(16.dp),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = AuroraTokens.AccentCyan,
                     contentColor = AuroraTokens.OnAccent,
@@ -98,7 +99,7 @@ fun SignInScreen(
                 Spacer(modifier = Modifier.size(ButtonDefaults.IconSpacing))
                 Text(
                     text = if (isLoading) "Signing in..." else "Continue with Google",
-                    style = MaterialTheme.typography.bodyMedium,
+                    style = MaterialTheme.typography.titleMedium,
                 )
             }
 

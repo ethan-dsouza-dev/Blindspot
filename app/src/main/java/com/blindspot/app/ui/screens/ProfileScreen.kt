@@ -1,12 +1,15 @@
 package com.blindspot.app.ui.screens
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
@@ -109,6 +112,7 @@ private fun ProfileScreenContent(
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
+            .statusBarsPadding()
             .padding(horizontal = 24.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
@@ -131,14 +135,20 @@ private fun ProfileScreenContent(
                     horizontalArrangement = Arrangement.spacedBy(16.dp),
                 ) {
                     if (uiState.avatarUrl.isNullOrBlank()) {
-                        Icon(
-                            imageVector = Icons.Filled.Person,
-                            contentDescription = "Avatar",
+                        Box(
                             modifier = Modifier
                                 .size(56.dp)
-                                .clip(CircleShape),
-                            tint = AuroraTokens.AccentCyan,
-                        )
+                                .clip(CircleShape)
+                                .background(AuroraTokens.AccentCyan.copy(alpha = 0.12f)),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Icon(
+                                imageVector = Icons.Filled.Person,
+                                contentDescription = "Avatar",
+                                modifier = Modifier.size(28.dp),
+                                tint = AuroraTokens.AccentCyan,
+                            )
+                        }
                     } else {
                         AsyncImage(
                             model = uiState.avatarUrl,
@@ -236,7 +246,7 @@ private fun SettingRow(
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(text = label, color = AuroraTokens.TextSecondary, style = MaterialTheme.typography.bodyMedium)
+        Text(text = label, color = AuroraTokens.TextPrimary, style = MaterialTheme.typography.bodyMedium)
         Switch(checked = checked, onCheckedChange = onCheckedChange)
     }
 }

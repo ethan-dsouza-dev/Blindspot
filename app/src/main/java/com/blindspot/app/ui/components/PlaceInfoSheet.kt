@@ -1,9 +1,11 @@
 package com.blindspot.app.ui.components
 
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -17,8 +19,12 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.NearMe
@@ -32,6 +38,10 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.SheetState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -46,18 +56,23 @@ import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import com.blindspot.app.R
 import com.blindspot.app.data.model.Place
-import com.blindspot.app.ui.components.aurora.AuroraCard
 import com.blindspot.app.ui.theme.AuroraTokens
 import com.blindspot.app.util.categoryLabel
 import com.blindspot.app.util.priceLabel
 import com.blindspot.app.util.ratingLabel
 
+/** Roughly how many characters a 3-line body description holds at this width; beyond this the
+ * description collapses behind a "Read more" toggle. */
+private const val DESCRIPTION_FOLD_CHARS = 130
+
 /**
  * The single shared venue detail sheet, used from every entry point (Discover, Feed, Map) so
  * the venue presentation is identical across the app.
  *
- * CTA hierarchy: "Take me there" ([onViewOnMap]) is the primary filled action; "Next"
- * ([onSkip], optional) is the tonal secondary; back is a circular tonal icon button.
+ * The hero is a swipeable photo pager with a gradient scrim and page indicators; the body (chips +
+ * description) scrolls while the CTA row stays pinned at the bottom. CTA hierarchy: "Take me
+ * there" ([onViewOnMap]) is the primary filled action; "Next" ([onSkip], optional) is the tonal
+ * secondary; back is a circular tonal icon button.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -77,47 +92,59 @@ fun PlaceInfoSheet(
         sheetState = sheetState,
         containerColor = AuroraTokens.BaseSlate,
         modifier = modifier,
+        dragHandle = {
+            Box(
+                modifier = Modifier
+                    .padding(top = 12.dp, bottom = 4.dp)
+                    .size(width = 40.dp, height = 4.dp)
+                    .clip(RoundedCornerShape(2.dp))
+                    .background(AuroraTokens.SurfaceBorder),
+            )
+        },
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .navigationBarsPadding(),
         ) {
-            // Hero image with gradient overlay and title.
-            HeroImage(
-                photos = place.imageUrl.orEmpty().filter { it.isNotBlank() },
-                contentDescription = place.name,
-                placeName = place.name,
-                distanceLabel = distanceLabel,
-                modifier = Modifier.fillMaxWidth(),
-            )
-
             Column(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(start = 24.dp, end = 24.dp, bottom = 24.dp),
+                    .weight(1f, fill = false)
+                    .verticalScroll(rememberScrollState()),
             ) {
-                MetadataChips(
-                    place = place,
+                // Hero image with gradient overlay and title.
+                HeroImage(
+                    photos = place.imageUrl.orEmpty().filter { it.isNotBlank() },
+                    contentDescription = place.name,
+                    placeName = place.name,
                     distanceLabel = distanceLabel,
-                    modifier = Modifier.padding(top = 16.dp),
+                    modifier = Modifier.fillMaxWidth(),
                 )
 
-                if (place.description.isNotBlank()) {
-                    Text(
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(start = 24.dp, end = 24.dp),
+                ) {
+                    MetadataChips(
+                        place = place,
+                        distanceLabel = distanceLabel,
+                        modifier = Modifier.padding(top = 16.dp),
+                    )
+
+                    DescriptionSection(
                         text = place.description,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = AuroraTokens.TextSecondary,
-                        maxLines = 3,
-                        overflow = TextOverflow.Ellipsis,
                         modifier = Modifier.padding(top = 16.dp),
                     )
                 }
+            }
 
+            val hasActions = showBack || onSkip != null || onViewOnMap != null
+            if (hasActions) {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(top = 24.dp),
+                        .padding(start = 24.dp, end = 24.dp, top = 16.dp, bottom = 24.dp),
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
@@ -142,8 +169,6 @@ fun PlaceInfoSheet(
                             onClick = { onViewOnMap(); onDismiss() },
                             modifier = Modifier.weight(1.4f),
                         )
-                    } else if (onSkip == null) {
-                        Spacer(modifier = Modifier.weight(1f))
                     }
                 }
             }
@@ -151,7 +176,8 @@ fun PlaceInfoSheet(
     }
 }
 
-/** Hero image with gradient overlay and place name + distance. */
+/** Hero image: swipeable photo pager with a gradient scrim, page indicators, and place name +
+ * distance overlaid on the scrim. Falls back to a single placeholder when there are no photos. */
 @Composable
 private fun HeroImage(
     photos: List<String>,
@@ -161,6 +187,7 @@ private fun HeroImage(
     modifier: Modifier = Modifier,
 ) {
     val photoShape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
+    val photoCount = photos.size
 
     Box(
         modifier = modifier
@@ -168,7 +195,7 @@ private fun HeroImage(
             .clip(photoShape),
         contentAlignment = Alignment.BottomStart,
     ) {
-        if (photos.isEmpty()) {
+        if (photoCount == 0) {
             Image(
                 painter = painterResource(R.drawable.bar),
                 contentDescription = contentDescription,
@@ -176,12 +203,26 @@ private fun HeroImage(
                 modifier = Modifier.fillMaxSize(),
             )
         } else {
-            AsyncImage(
-                model = photos.first(),
-                contentDescription = contentDescription,
-                contentScale = ContentScale.Crop,
+            val pagerState = rememberPagerState(pageCount = { photoCount })
+            HorizontalPager(
+                state = pagerState,
                 modifier = Modifier.fillMaxSize(),
-            )
+            ) { page ->
+                AsyncImage(
+                    model = photos[page],
+                    contentDescription = contentDescription,
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.fillMaxSize(),
+                )
+            }
+
+            if (photoCount > 1) {
+                PageIndicator(
+                    pageCount = photoCount,
+                    currentPage = pagerState.currentPage,
+                    modifier = Modifier.align(Alignment.TopCenter),
+                )
+            }
         }
 
         Box(
@@ -218,6 +259,77 @@ private fun HeroImage(
                 ),
                 color = AuroraTokens.AccentCyan,
                 modifier = Modifier.padding(top = 4.dp),
+            )
+        }
+    }
+}
+
+/** Pill of pager dots; the active dot stretches into a capsule in the accent cyan. */
+@Composable
+private fun PageIndicator(
+    pageCount: Int,
+    currentPage: Int,
+    modifier: Modifier = Modifier,
+) {
+    Row(
+        modifier = modifier
+            .padding(top = 12.dp)
+            .clip(RoundedCornerShape(16.dp))
+            .background(Color.Black.copy(alpha = 0.35f))
+            .padding(horizontal = 10.dp, vertical = 6.dp),
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        repeat(pageCount) { index ->
+            val selected = currentPage == index
+            val width by animateDpAsState(
+                targetValue = if (selected) 18.dp else 6.dp,
+                label = "pageDotWidth",
+            )
+            Box(
+                modifier = Modifier
+                    .height(6.dp)
+                    .width(width)
+                    .clip(CircleShape)
+                    .background(
+                        if (selected) {
+                            AuroraTokens.AccentCyan
+                        } else {
+                            AuroraTokens.TextPrimary.copy(alpha = 0.4f)
+                        },
+                    ),
+            )
+        }
+    }
+}
+
+/** Body description, collapsed to 3 lines with a "Read more"/"Show less" toggle. */
+@Composable
+private fun DescriptionSection(
+    text: String,
+    modifier: Modifier = Modifier,
+) {
+    if (text.isBlank()) return
+
+    var expanded by remember { mutableStateOf(false) }
+
+    Column(modifier = modifier.fillMaxWidth()) {
+        Text(
+            text = text,
+            style = MaterialTheme.typography.bodyMedium,
+            color = AuroraTokens.TextSecondary,
+            maxLines = if (expanded) Int.MAX_VALUE else 3,
+            overflow = TextOverflow.Ellipsis,
+        )
+        if (text.length > DESCRIPTION_FOLD_CHARS) {
+            Text(
+                text = if (expanded) "Show less" else "Read more",
+                style = MaterialTheme.typography.bodyMedium,
+                color = AuroraTokens.AccentCyan,
+                modifier = Modifier
+                    .padding(top = 4.dp)
+                    .clickable(onClick = { expanded = !expanded })
+                    .padding(vertical = 4.dp),
             )
         }
     }
