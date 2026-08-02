@@ -1,8 +1,9 @@
 package com.blindspot.app.ui.components
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -17,6 +18,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -32,6 +34,7 @@ import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.blindspot.app.data.repository.PlaceRepository
+import com.blindspot.app.ui.components.aurora.AuroraFloating
 import com.blindspot.app.ui.theme.AuroraTokens
 
 /**
@@ -51,9 +54,15 @@ fun PriceFilterDropdown(
     var expanded by remember { mutableStateOf(false) }
     val chevronRotation by animateFloatAsState(
         targetValue = if (expanded) 180f else 0f,
-        animationSpec = tween(durationMillis = 200),
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioMediumBouncy,
+            stiffness = Spring.StiffnessLow,
+        ),
         label = "priceChevronRotation",
     )
+    val options = remember {
+        listOf<Int?>(null) + (PlaceRepository.MIN_PRICE_LEVEL..PlaceRepository.MAX_PRICE_LEVEL).toList()
+    }
 
     Column(modifier = modifier.fillMaxWidth()) {
         Row(
@@ -63,7 +72,7 @@ fun PriceFilterDropdown(
         ) {
             Text(
                 text = "Price",
-                style = MaterialTheme.typography.labelLarge,
+                style = MaterialTheme.typography.bodyMedium,
                 color = AuroraTokens.TextSecondary,
             )
             Row(
@@ -72,12 +81,12 @@ fun PriceFilterDropdown(
                     .border(1.dp, AuroraTokens.SurfaceBorder, MaterialTheme.shapes.medium)
                     .background(AuroraTokens.SurfaceElevated)
                     .clickable { expanded = !expanded }
-                    .padding(horizontal = 14.dp, vertical = 8.dp),
+                    .padding(horizontal = 16.dp, vertical = 12.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
                     text = priceLabel(priceLevel),
-                    style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold),
+                    style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
                     color = AuroraTokens.AccentCyan,
                 )
                 Icon(
@@ -93,24 +102,34 @@ fun PriceFilterDropdown(
 
         AnimatedVisibility(
             visible = expanded,
-            enter = expandVertically(animationSpec = tween(200)) + fadeIn(tween(200)),
-            exit = shrinkVertically(animationSpec = tween(200)) + fadeOut(tween(200)),
+            enter = expandVertically(animationSpec = spring(
+                dampingRatio = Spring.DampingRatioMediumBouncy,
+                stiffness = Spring.StiffnessLow,
+            )) + fadeIn(spring(
+                dampingRatio = Spring.DampingRatioMediumBouncy,
+                stiffness = Spring.StiffnessLow,
+            )),
+            exit = shrinkVertically(animationSpec = spring(
+                dampingRatio = Spring.DampingRatioMediumBouncy,
+                stiffness = Spring.StiffnessLow,
+            )) + fadeOut(spring(
+                dampingRatio = Spring.DampingRatioMediumBouncy,
+                stiffness = Spring.StiffnessLow,
+            )),
         ) {
-            Column(
+            AuroraFloating(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(top = 8.dp)
-                    .clip(MaterialTheme.shapes.medium)
-                    .border(1.dp, AuroraTokens.SurfaceBorder, MaterialTheme.shapes.medium)
-                    .background(AuroraTokens.SurfaceElevated),
+                    .padding(top = 8.dp),
+                shape = MaterialTheme.shapes.medium,
             ) {
-                listOf(null) + (PlaceRepository.MIN_PRICE_LEVEL..PlaceRepository.MAX_PRICE_LEVEL).toList()
-                    .forEach { level ->
+                Column {
+                    options.forEachIndexed { index, level ->
                         val selected = level == priceLevel
                         Text(
                             text = priceLabel(level),
-                            style = MaterialTheme.typography.bodyLarge.copy(
-                                fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
+                            style = MaterialTheme.typography.bodyMedium.copy(
+                                fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal,
                             ),
                             color = if (selected) AuroraTokens.AccentCyan else AuroraTokens.TextPrimary,
                             modifier = Modifier
@@ -119,9 +138,16 @@ fun PriceFilterDropdown(
                                     onPriceChange(level)
                                     expanded = false
                                 }
-                                .padding(horizontal = 14.dp, vertical = 12.dp),
+                                .padding(horizontal = 16.dp, vertical = 14.dp),
                         )
+                        if (index < options.lastIndex) {
+                            HorizontalDivider(
+                                color = AuroraTokens.SurfaceBorder,
+                                modifier = Modifier.padding(horizontal = 16.dp),
+                            )
+                        }
                     }
+                }
             }
         }
     }

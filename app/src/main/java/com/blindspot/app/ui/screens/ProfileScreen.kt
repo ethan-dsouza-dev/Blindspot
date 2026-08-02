@@ -1,19 +1,24 @@
 package com.blindspot.app.ui.screens
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
@@ -29,19 +34,17 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.compose.ui.layout.ContentScale
 import coil3.compose.AsyncImage
 import com.blindspot.app.data.model.Place
 import com.blindspot.app.ui.components.NearbyPlaceRow
 import com.blindspot.app.ui.components.PlaceInfoSheet
-import com.blindspot.app.ui.components.aurora.AuroraSurface
+import com.blindspot.app.ui.components.aurora.AuroraCard
 import com.blindspot.app.ui.feed.TrendingPlaceItem
 import com.blindspot.app.ui.profile.ProfileUiState
 import com.blindspot.app.ui.profile.ProfileViewModel
 import com.blindspot.app.ui.theme.AuroraTokens
 import org.koin.androidx.compose.koinViewModel
-import androidx.compose.material3.ButtonDefaults
 
 private const val SAVED_PLACE_LABEL = "Saved"
 
@@ -95,7 +98,7 @@ private fun ProfileScreenContent(
             Text(
                 text = uiState.error,
                 color = AuroraTokens.TextSecondary,
-                fontSize = 14.sp,
+                style = MaterialTheme.typography.bodyMedium,
                 modifier = Modifier.padding(bottom = 16.dp),
             )
             Button(onClick = onRetry) {
@@ -108,20 +111,21 @@ private fun ProfileScreenContent(
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
+            .statusBarsPadding()
             .padding(horizontal = 24.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         item {
             Text(
                 text = "Profile",
-                fontSize = 28.sp,
+                style = MaterialTheme.typography.headlineLarge,
                 color = AuroraTokens.TextPrimary,
                 modifier = Modifier.padding(top = 24.dp),
             )
         }
 
         item {
-            AuroraSurface {
+            AuroraCard {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -130,14 +134,20 @@ private fun ProfileScreenContent(
                     horizontalArrangement = Arrangement.spacedBy(16.dp),
                 ) {
                     if (uiState.avatarUrl.isNullOrBlank()) {
-                        Icon(
-                            imageVector = Icons.Filled.Person,
-                            contentDescription = "Avatar",
+                        Box(
                             modifier = Modifier
                                 .size(56.dp)
-                                .clip(CircleShape),
-                            tint = AuroraTokens.AccentCyan,
-                        )
+                                .clip(CircleShape)
+                                .background(AuroraTokens.AccentCyan.copy(alpha = 0.12f)),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Icon(
+                                imageVector = Icons.Filled.Person,
+                                contentDescription = "Avatar",
+                                modifier = Modifier.size(28.dp),
+                                tint = AuroraTokens.AccentCyan,
+                            )
+                        }
                     } else {
                         AsyncImage(
                             model = uiState.avatarUrl,
@@ -151,12 +161,12 @@ private fun ProfileScreenContent(
                     Column {
                         Text(
                             text = uiState.name,
-                            fontSize = 18.sp,
+                            style = MaterialTheme.typography.titleLarge,
                             color = AuroraTokens.TextPrimary,
                         )
                         Text(
                             text = uiState.email,
-                            fontSize = 13.sp,
+                            style = MaterialTheme.typography.bodyMedium,
                             color = AuroraTokens.TextSecondary,
                         )
                     }
@@ -165,7 +175,7 @@ private fun ProfileScreenContent(
         }
 
         item {
-            AuroraSurface {
+            AuroraCard {
                 Column(modifier = Modifier.padding(16.dp)) {
                     SettingRow(
                         label = "Distance in kilometers",
@@ -185,7 +195,7 @@ private fun ProfileScreenContent(
             item {
                 Text(
                     text = "Saved places",
-                    fontSize = 16.sp,
+                    style = MaterialTheme.typography.titleLarge,
                     color = AuroraTokens.TextPrimary,
                 )
             }
@@ -235,7 +245,7 @@ private fun SettingRow(
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(text = label, color = AuroraTokens.TextSecondary, fontSize = 14.sp)
+        Text(text = label, color = AuroraTokens.TextPrimary, style = MaterialTheme.typography.bodyMedium)
         Switch(checked = checked, onCheckedChange = onCheckedChange)
     }
 }

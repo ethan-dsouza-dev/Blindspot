@@ -11,7 +11,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.blindspot.app.ui.feed.TrendingPlaceItem
 import com.blindspot.app.ui.theme.AuroraTokens
@@ -31,10 +30,10 @@ fun TrendingNowSection(
             text = "Trending Now",
             style = MaterialTheme.typography.titleLarge,
             color = AuroraTokens.TextPrimary,
-            modifier = Modifier.padding(start = 20.dp, bottom = 12.dp),
+            modifier = Modifier.padding(start = 24.dp, bottom = 12.dp),
         )
         LazyRow(
-            contentPadding = PaddingValues(horizontal = 20.dp),
+            contentPadding = PaddingValues(horizontal = 24.dp),
             horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             items(items, key = { it.place.id }) { item ->

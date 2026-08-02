@@ -1,7 +1,8 @@
 package com.blindspot.app.ui.components
 
 import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.Spring
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -27,10 +28,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.blindspot.app.navigation.Destination
-import com.blindspot.app.ui.components.aurora.AuroraSurface
+import com.blindspot.app.ui.components.aurora.AuroraFloating
 import com.blindspot.app.ui.theme.AuroraTokens
 
-private val PillShape = RoundedCornerShape(32.dp)
+private val PillShape = RoundedCornerShape(28.dp)
 
 @Composable
 fun FloatingNavPill(
@@ -42,17 +43,17 @@ fun FloatingNavPill(
         modifier = modifier
             .fillMaxWidth()
             .windowInsetsPadding(WindowInsets.navigationBars)
-            .padding(horizontal = 24.dp, vertical = 8.dp),
+            .padding(horizontal = 24.dp, vertical = 12.dp),
         contentAlignment = Alignment.BottomCenter,
     ) {
-        AuroraSurface(
+        AuroraFloating(
             shape = PillShape,
             modifier = Modifier.fillMaxWidth(0.9f),
         ) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 12.dp, vertical = 4.dp),
+                    .padding(horizontal = 8.dp, vertical = 4.dp),
                 horizontalArrangement = Arrangement.SpaceEvenly,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
@@ -85,19 +86,27 @@ private fun RowScope.FloatingNavItem(
 ) {
     val tint by animateColorAsState(
         targetValue = if (selected) AuroraTokens.AccentCyan else AuroraTokens.TextSecondary,
-        animationSpec = tween(durationMillis = 200),
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioMediumBouncy,
+            stiffness = Spring.StiffnessLow,
+        ),
         label = "navItemTint",
     )
+
+    // Shared with clickable so navItemPress observes the press instead of a separate dead source.
+    val interactionSource = remember { MutableInteractionSource() }
 
     Column(
         modifier = Modifier
             .weight(1f)
             .clickable(
-                interactionSource = remember { MutableInteractionSource() },
+                interactionSource = interactionSource,
                 indication = null,
                 onClick = onClick,
             )
-            .padding(vertical = 8.dp),
+            .navItemPress(interactionSource = interactionSource)
+            .padding(vertical = 10.dp)
+            .minTouchTarget(48.dp, 48.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         icon(tint)

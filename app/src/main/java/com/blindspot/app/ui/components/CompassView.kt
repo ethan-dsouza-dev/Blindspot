@@ -10,6 +10,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -38,8 +39,8 @@ data class CompassColors(
     val dialFill: Color = AuroraTokens.CompassDialFill,
     val dialStroke: Color = AuroraTokens.CompassDialStroke,
     val dialInnerStroke: Color = AuroraTokens.CompassDialInnerStroke,
-    val tickMajor: Color = AuroraTokens.CompassTickMajor,
-    val tickMinor: Color = AuroraTokens.CompassTickMinor,
+    val tickMajor: Color = AuroraTokens.CompassTickMajor.copy(alpha = 0.5f),
+    val tickMinor: Color = AuroraTokens.CompassTickMinor.copy(alpha = 0.5f),
     val needleTail: Color = AuroraTokens.CompassNeedleTail,
     val hub: Color = AuroraTokens.CompassHub,
     val hubInner: Color = AuroraTokens.CompassHubInner,
@@ -51,6 +52,7 @@ data class CompassColors(
  * @param rotationDegrees the needle rotation (clockwise) where the target lies relative to the
  *   top of the screen — typically `bearingToPlace - deviceHeading`.
  * @param colors color set for the dial, needle, and labels.
+ * @param onLockOn callback when needle locks on (for haptic feedback)
  */
 @Composable
 fun CompassView(
@@ -58,6 +60,7 @@ fun CompassView(
     modifier: Modifier = Modifier,
     size: Dp = 280.dp,
     colors: CompassColors = CompassColors(),
+    onLockOn: (() -> Unit)? = null,
 ) {
     // Track an "unwrapped" target so the needle always turns the short way and never spins a
     // full circle across the 0/360 boundary. Each update nudges the accumulated target by the
@@ -82,6 +85,16 @@ fun CompassView(
     // the user gets a quiet confirmation they're walking the right way.
     val headingError = ((animatedRotation % 360f) + 540f) % 360f - 180f
     val lockedOn = abs(headingError) <= 10f
+    var wasLockedOn by remember { mutableStateOf(false) }
+
+    // Trigger haptic on lock-on transition (only the moment it becomes locked).
+    LaunchedEffect(lockedOn) {
+        if (lockedOn && !wasLockedOn) {
+            onLockOn?.invoke()
+        }
+        wasLockedOn = lockedOn
+    }
+
     val glowAlpha by animateFloatAsState(
         targetValue = if (lockedOn) 0.25f else 0f,
         label = "lockGlow",
@@ -109,7 +122,6 @@ fun CompassView(
                 drawNeedle(needleBrush, colors)
             }
         }
-
     }
 }
 

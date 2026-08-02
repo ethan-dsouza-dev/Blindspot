@@ -2,6 +2,7 @@ package com.blindspot.app.ui.components
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -16,6 +17,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -30,7 +32,7 @@ import com.blindspot.app.util.categoryLabel
 import com.blindspot.app.util.ratingLabel
 
 /**
- * Compact vertical-list row for feed sections ("Near you"): 56dp thumbnail, name, single
+ * Compact vertical-list row for feed sections ("Near you"): 64dp thumbnail, name, single
  * metadata line, and a trailing chevron. Tapping the row invokes [onClick].
  */
 @Composable
@@ -41,11 +43,18 @@ fun NearbyPlaceRow(
 ) {
     val place = item.place
 
+    val interactionSource = remember { MutableInteractionSource() }
+
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .clickable(onClick = onClick)
-            .padding(horizontal = 20.dp, vertical = 8.dp),
+            .clickable(
+                interactionSource = interactionSource,
+                indication = null,
+                onClick = onClick,
+            )
+            .listRowPress(interactionSource = interactionSource)
+            .padding(horizontal = 24.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(16.dp),
     ) {
@@ -55,13 +64,13 @@ fun NearbyPlaceRow(
             contentDescription = place.name,
             contentScale = ContentScale.Crop,
             modifier = Modifier
-                .size(56.dp)
+                .size(64.dp)
                 .clip(RoundedCornerShape(12.dp)),
         )
         Column(modifier = Modifier.weight(1f)) {
             Text(
                 text = place.name,
-                style = MaterialTheme.typography.titleSmall,
+                style = MaterialTheme.typography.titleMedium,
                 color = AuroraTokens.TextPrimary,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
@@ -72,15 +81,15 @@ fun NearbyPlaceRow(
             ) {
                 Text(
                     text = "${item.distanceLabel} · ${place.categoryLabel}",
-                    style = MaterialTheme.typography.labelMedium,
-                    color = AuroraTokens.TextSecondary,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = AuroraTokens.AccentCyan,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
                 place.ratingLabel?.let { rating ->
                     Text(
                         text = " · ",
-                        style = MaterialTheme.typography.labelMedium,
+                        style = MaterialTheme.typography.bodyMedium,
                         color = AuroraTokens.TextSecondary,
                     )
                     Icon(
@@ -91,7 +100,7 @@ fun NearbyPlaceRow(
                     )
                     Text(
                         text = " $rating",
-                        style = MaterialTheme.typography.labelMedium,
+                        style = MaterialTheme.typography.bodyMedium,
                         color = AuroraTokens.TextSecondary,
                     )
                 }
@@ -100,7 +109,8 @@ fun NearbyPlaceRow(
         Icon(
             imageVector = Icons.Filled.ChevronRight,
             contentDescription = null,
-            tint = AuroraTokens.TextSecondary,
+            tint = AuroraTokens.TextTertiary,
+            modifier = Modifier.size(16.dp),
         )
     }
 }

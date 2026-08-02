@@ -1,8 +1,13 @@
 package com.blindspot.app.ui.components
 
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -14,17 +19,18 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.NearMe
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -32,11 +38,19 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.SheetState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
@@ -47,12 +61,18 @@ import com.blindspot.app.util.categoryLabel
 import com.blindspot.app.util.priceLabel
 import com.blindspot.app.util.ratingLabel
 
+/** Roughly how many characters a 3-line body description holds at this width; beyond this the
+ * description collapses behind a "Read more" toggle. */
+private const val DESCRIPTION_FOLD_CHARS = 130
+
 /**
  * The single shared venue detail sheet, used from every entry point (Discover, Feed, Map) so
  * the venue presentation is identical across the app.
  *
- * CTA hierarchy: "Take me there" ([onViewOnMap]) is the primary filled action; "Next"
- * ([onSkip], optional) is the tonal secondary; back is a tonal icon button.
+ * The hero is a swipeable photo pager with a gradient scrim and page indicators; the body (chips +
+ * description) scrolls while the CTA row stays pinned at the bottom. CTA hierarchy: "Take me
+ * there" ([onViewOnMap]) is the primary filled action; "Next" ([onSkip], optional) is the tonal
+ * secondary; back is a circular tonal icon button.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -72,87 +92,252 @@ fun PlaceInfoSheet(
         sheetState = sheetState,
         containerColor = AuroraTokens.BaseSlate,
         modifier = modifier,
+        dragHandle = {
+            Box(
+                modifier = Modifier
+                    .padding(top = 12.dp, bottom = 4.dp)
+                    .size(width = 40.dp, height = 4.dp)
+                    .clip(RoundedCornerShape(2.dp))
+                    .background(AuroraTokens.SurfaceBorder),
+            )
+        },
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .navigationBarsPadding()
-                .padding(start = 20.dp, end = 20.dp, bottom = 12.dp),
+                .navigationBarsPadding(),
         ) {
-            Text(
-                text = place.name,
-                style = MaterialTheme.typography.headlineSmall,
-                color = AuroraTokens.TextPrimary,
-            )
-
-            MetadataRow(
-                place = place,
-                distanceLabel = distanceLabel,
-                modifier = Modifier.padding(top = 8.dp),
-            )
-
-            if (place.description.isNotBlank()) {
-                Text(
-                    text = place.description,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = AuroraTokens.TextSecondary,
-                    maxLines = 3,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.padding(top = 12.dp),
+            Column(
+                modifier = Modifier
+                    .weight(1f, fill = false)
+                    .verticalScroll(rememberScrollState()),
+            ) {
+                // Hero image with gradient overlay and title.
+                HeroImage(
+                    photos = place.imageUrl.orEmpty().filter { it.isNotBlank() },
+                    contentDescription = place.name,
+                    placeName = place.name,
+                    distanceLabel = distanceLabel,
+                    modifier = Modifier.fillMaxWidth(),
                 )
+
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(start = 24.dp, end = 24.dp),
+                ) {
+                    MetadataChips(
+                        place = place,
+                        modifier = Modifier.padding(top = 16.dp),
+                    )
+
+                    DescriptionSection(
+                        text = place.description,
+                        modifier = Modifier.padding(top = 16.dp),
+                    )
+                }
             }
 
-            PlacePhotos(
-                photos = place.imageUrl.orEmpty().filter { it.isNotBlank() },
-                contentDescription = place.name,
-                modifier = Modifier.padding(top = 16.dp),
-            )
-
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 20.dp),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                if (showBack) {
-                    SecondaryIconButton(
-                        icon = Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = "Point to the previous place",
-                        onClick = onBack,
-                    )
-                }
-                if (onSkip != null) {
-                    SecondaryButton(
-                        label = "Next",
-                        onClick = onSkip,
-                        modifier = Modifier.weight(1f),
-                    )
-                }
-                if (onViewOnMap != null) {
-                    PrimaryButton(
-                        label = "Take me there",
-                        icon = Icons.Filled.NearMe,
-                        onClick = { onViewOnMap(); onDismiss() },
-                        modifier = Modifier.weight(1.4f),
-                    )
-                } else if (onSkip == null) {
-                    // No actions besides back — shouldn't happen, but keep the row balanced.
-                    Spacer(modifier = Modifier.weight(1f))
+            val hasActions = showBack || onSkip != null || onViewOnMap != null
+            if (hasActions) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(start = 24.dp, end = 24.dp, top = 16.dp, bottom = 24.dp),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    if (showBack) {
+                        CircleIconButton(
+                            icon = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Point to the previous place",
+                            onClick = onBack,
+                        )
+                    }
+                    if (onSkip != null) {
+                        SecondaryButton(
+                            label = "Next",
+                            onClick = onSkip,
+                            modifier = Modifier.weight(1f),
+                        )
+                    }
+                    if (onViewOnMap != null) {
+                        PrimaryButton(
+                            label = "Take me there",
+                            icon = Icons.Filled.NearMe,
+                            onClick = { onViewOnMap(); onDismiss() },
+                            modifier = Modifier.weight(1.4f),
+                        )
+                    }
                 }
             }
         }
     }
 }
 
-/**
- * Single unified metadata line: `386 m · ★ 4.5 · $$ · Fine Dining`. Distance carries the only
- * accent; everything else stays quiet so the row scans as one unit.
- */
+/** Hero image: swipeable photo pager with a gradient scrim, page indicators, and place name +
+ * distance overlaid on the scrim. Falls back to a single placeholder when there are no photos. */
 @Composable
-private fun MetadataRow(
-    place: Place,
+private fun HeroImage(
+    photos: List<String>,
+    contentDescription: String,
+    placeName: String,
     distanceLabel: String,
+    modifier: Modifier = Modifier,
+) {
+    val photoShape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
+    val photoCount = photos.size
+
+    Box(
+        modifier = modifier
+            .height(240.dp)
+            .clip(photoShape),
+        contentAlignment = Alignment.BottomStart,
+    ) {
+        if (photoCount == 0) {
+            Image(
+                painter = painterResource(R.drawable.bar),
+                contentDescription = contentDescription,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.fillMaxSize(),
+            )
+        } else {
+            val pagerState = rememberPagerState(pageCount = { photoCount })
+            HorizontalPager(
+                state = pagerState,
+                modifier = Modifier.fillMaxSize(),
+            ) { page ->
+                AsyncImage(
+                    model = photos[page],
+                    contentDescription = contentDescription,
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.fillMaxSize(),
+                )
+            }
+
+            if (photoCount > 1) {
+                PageIndicator(
+                    pageCount = photoCount,
+                    currentPage = pagerState.currentPage,
+                    modifier = Modifier.align(Alignment.TopCenter),
+                )
+            }
+        }
+
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(
+                    brush = Brush.verticalGradient(
+                        colors = listOf(
+                            Color.Transparent,
+                            AuroraTokens.BaseDeep.copy(alpha = 0.7f),
+                            AuroraTokens.BaseDeep,
+                        ),
+                    ),
+                ),
+        )
+
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(start = 24.dp, end = 24.dp, bottom = 24.dp),
+        ) {
+            Text(
+                text = placeName,
+                style = MaterialTheme.typography.displayMedium,
+                color = AuroraTokens.TextPrimary,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+            )
+            Text(
+                text = "$distanceLabel away",
+                style = MaterialTheme.typography.bodyMedium.copy(
+                    fontWeight = FontWeight.Bold,
+                    fontFeatureSettings = "tnum",
+                ),
+                color = AuroraTokens.AccentCyan,
+                modifier = Modifier.padding(top = 4.dp),
+            )
+        }
+    }
+}
+
+/** Pill of pager dots; the active dot stretches into a capsule in the accent cyan. */
+@Composable
+private fun PageIndicator(
+    pageCount: Int,
+    currentPage: Int,
+    modifier: Modifier = Modifier,
+) {
+    Row(
+        modifier = modifier
+            .padding(top = 12.dp)
+            .clip(RoundedCornerShape(16.dp))
+            .background(Color.Black.copy(alpha = 0.35f))
+            .padding(horizontal = 10.dp, vertical = 6.dp),
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        repeat(pageCount) { index ->
+            val selected = currentPage == index
+            val width by animateDpAsState(
+                targetValue = if (selected) 18.dp else 6.dp,
+                label = "pageDotWidth",
+            )
+            Box(
+                modifier = Modifier
+                    .height(6.dp)
+                    .width(width)
+                    .clip(CircleShape)
+                    .background(
+                        if (selected) {
+                            AuroraTokens.AccentCyan
+                        } else {
+                            AuroraTokens.TextPrimary.copy(alpha = 0.4f)
+                        },
+                    ),
+            )
+        }
+    }
+}
+
+/** Body description, collapsed to 3 lines with a "Read more"/"Show less" toggle. */
+@Composable
+private fun DescriptionSection(
+    text: String,
+    modifier: Modifier = Modifier,
+) {
+    if (text.isBlank()) return
+
+    var expanded by remember { mutableStateOf(false) }
+
+    Column(modifier = modifier.fillMaxWidth()) {
+        Text(
+            text = text,
+            style = MaterialTheme.typography.bodyMedium,
+            color = AuroraTokens.TextSecondary,
+            maxLines = if (expanded) Int.MAX_VALUE else 3,
+            overflow = TextOverflow.Ellipsis,
+        )
+        if (text.length > DESCRIPTION_FOLD_CHARS) {
+            Text(
+                text = if (expanded) "Show less" else "Read more",
+                style = MaterialTheme.typography.bodyMedium,
+                color = AuroraTokens.AccentCyan,
+                modifier = Modifier
+                    .padding(top = 4.dp)
+                    .clickable(onClick = { expanded = !expanded })
+                    .padding(vertical = 4.dp),
+            )
+        }
+    }
+}
+
+/** Metadata as chips: rating, price, category (elevated). Distance is shown in the hero scrim. */
+@Composable
+private fun MetadataChips(
+    place: Place,
     modifier: Modifier = Modifier,
 ) {
     Row(
@@ -160,53 +345,65 @@ private fun MetadataRow(
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(
-            text = distanceLabel,
-            style = MaterialTheme.typography.labelLarge,
-            color = AuroraTokens.AccentCyan,
-        )
         place.ratingLabel?.let { rating ->
-            MetadataDot()
-            Icon(
-                imageVector = Icons.Filled.Star,
-                contentDescription = null,
-                tint = AuroraTokens.RatingStar,
-                modifier = Modifier.size(14.dp),
-            )
-            Text(
+            Chip(
                 text = rating,
-                style = MaterialTheme.typography.labelLarge,
-                color = AuroraTokens.TextPrimary,
+                textColor = AuroraTokens.TextPrimary,
+                backgroundColor = AuroraTokens.SurfaceElevated,
+                icon = {
+                    Icon(
+                        imageVector = Icons.Filled.Star,
+                        contentDescription = null,
+                        tint = AuroraTokens.RatingStar,
+                        modifier = Modifier.size(14.dp),
+                    )
+                },
             )
         }
         place.priceLabel?.let { price ->
-            MetadataDot()
-            Text(
+            Chip(
                 text = price,
-                style = MaterialTheme.typography.labelLarge,
-                color = AuroraTokens.TextSecondary,
+                textColor = AuroraTokens.TextSecondary,
+                backgroundColor = AuroraTokens.SurfaceElevated,
+                icon = null,
             )
         }
         if (place.categoryLabel.isNotBlank()) {
-            MetadataDot()
-            Text(
+            Chip(
                 text = place.categoryLabel,
-                style = MaterialTheme.typography.labelLarge,
-                color = AuroraTokens.TextSecondary,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
+                textColor = AuroraTokens.TextSecondary,
+                backgroundColor = AuroraTokens.SurfaceElevated,
+                icon = null,
             )
         }
     }
 }
 
 @Composable
-private fun MetadataDot() {
-    Text(
-        text = "·",
-        style = MaterialTheme.typography.labelLarge,
-        color = AuroraTokens.TextSecondary,
-    )
+private fun Chip(
+    text: String,
+    textColor: Color,
+    backgroundColor: Color,
+    icon: (@Composable () -> Unit)?,
+) {
+    Row(
+        modifier = Modifier
+            .clip(RoundedCornerShape(16.dp))
+            .background(backgroundColor)
+            .border(1.dp, AuroraTokens.SurfaceBorder, RoundedCornerShape(16.dp))
+            .padding(horizontal = 12.dp, vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
+        icon?.invoke()
+        Text(
+            text = text,
+            style = MaterialTheme.typography.bodyMedium,
+            color = textColor,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
+    }
 }
 
 /** Filled accent CTA — the one and only primary button style. */
@@ -219,7 +416,8 @@ private fun PrimaryButton(
 ) {
     Button(
         onClick = onClick,
-        modifier = modifier.height(52.dp),
+        modifier = modifier.height(56.dp),
+        shape = RoundedCornerShape(16.dp),
         colors = ButtonDefaults.buttonColors(
             containerColor = AuroraTokens.AccentCyan,
             contentColor = AuroraTokens.OnAccent,
@@ -229,7 +427,7 @@ private fun PrimaryButton(
             Icon(
                 imageVector = icon,
                 contentDescription = null,
-                modifier = Modifier.size(18.dp),
+                modifier = Modifier.size(20.dp),
             )
             Spacer(modifier = Modifier.width(8.dp))
         }
@@ -241,7 +439,7 @@ private fun PrimaryButton(
     }
 }
 
-/** Tonal secondary button: elevated surface with a hairline border. */
+/** Tonal secondary button: elevated surface with an accent hairline border. */
 @Composable
 private fun SecondaryButton(
     label: String,
@@ -250,9 +448,9 @@ private fun SecondaryButton(
 ) {
     Button(
         onClick = onClick,
-        modifier = modifier
-            .height(52.dp)
-            .border(1.dp, AuroraTokens.SurfaceBorder, CircleShape),
+        modifier = modifier.height(56.dp),
+        shape = RoundedCornerShape(16.dp),
+        border = BorderStroke(1.dp, AuroraTokens.AccentCyan.copy(alpha = 0.10f)),
         colors = ButtonDefaults.buttonColors(
             containerColor = AuroraTokens.SurfaceElevated,
             contentColor = AuroraTokens.TextPrimary,
@@ -266,18 +464,17 @@ private fun SecondaryButton(
     }
 }
 
+/** Circular tonal icon button for back action. */
 @Composable
-private fun SecondaryIconButton(
+private fun CircleIconButton(
     icon: ImageVector,
     contentDescription: String,
     onClick: () -> Unit,
-    modifier: Modifier = Modifier,
 ) {
     Button(
         onClick = onClick,
-        modifier = modifier
-            .size(52.dp)
-            .border(1.dp, AuroraTokens.SurfaceBorder, CircleShape),
+        modifier = Modifier.size(56.dp),
+        shape = CircleShape,
         contentPadding = PaddingValues(0.dp),
         colors = ButtonDefaults.buttonColors(
             containerColor = AuroraTokens.SurfaceElevated,
@@ -289,69 +486,5 @@ private fun SecondaryIconButton(
             contentDescription = contentDescription,
             modifier = Modifier.size(20.dp),
         )
-    }
-}
-
-@Composable
-private fun PlacePhotos(
-    photos: List<String>,
-    contentDescription: String,
-    modifier: Modifier = Modifier,
-) {
-    val photoShape = RoundedCornerShape(16.dp)
-    val photoModifier = Modifier.border(1.dp, AuroraTokens.SurfaceBorder, photoShape)
-
-    if (photos.isEmpty()) {
-        Card(
-            shape = photoShape,
-            modifier = modifier
-                .fillMaxWidth()
-                .height(200.dp)
-                .then(photoModifier),
-        ) {
-            Image(
-                painter = painterResource(R.drawable.bar),
-                contentDescription = contentDescription,
-                contentScale = ContentScale.Crop,
-                modifier = Modifier.fillMaxSize(),
-            )
-        }
-    } else if (photos.size == 1) {
-        Card(
-            shape = photoShape,
-            modifier = modifier
-                .fillMaxWidth()
-                .height(200.dp)
-                .then(photoModifier),
-        ) {
-            AsyncImage(
-                model = photos.first(),
-                contentDescription = contentDescription,
-                contentScale = ContentScale.Crop,
-                modifier = Modifier.fillMaxSize(),
-            )
-        }
-    } else {
-        LazyRow(
-            modifier = modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            items(photos) { url ->
-                Card(
-                    shape = photoShape,
-                    modifier = Modifier
-                        .width(180.dp)
-                        .height(200.dp)
-                        .border(1.dp, AuroraTokens.SurfaceBorder, photoShape),
-                ) {
-                    AsyncImage(
-                        model = url,
-                        contentDescription = contentDescription,
-                        contentScale = ContentScale.Crop,
-                        modifier = Modifier.fillMaxSize(),
-                    )
-                }
-            }
-        }
     }
 }

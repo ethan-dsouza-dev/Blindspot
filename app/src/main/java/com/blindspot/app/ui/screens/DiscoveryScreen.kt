@@ -1,16 +1,30 @@
 package com.blindspot.app.ui.screens
 
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -27,6 +41,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -42,6 +60,14 @@ import com.blindspot.app.ui.discovery.DiscoveryUiState
 import com.blindspot.app.ui.discovery.PlacesViewModel
 import com.blindspot.app.ui.theme.AuroraTokens
 import org.koin.androidx.compose.koinViewModel
+import kotlin.math.min
+
+/** Radius presets used by the empty-state "Widen search" action. */
+private val WIDEN_PRESETS = listOf(500, 1_000, 2_000, 5_000)
+
+/** Next larger radius preset, or the largest preset if already there. */
+private fun nextWiderRadius(current: Int): Int =
+    WIDEN_PRESETS.firstOrNull { it > current } ?: WIDEN_PRESETS.last()
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -59,15 +85,17 @@ fun DiscoveryScreen(
         val state by viewModel.uiState.collectAsStateWithLifecycle()
         var sheetVisible by remember { mutableStateOf(false) }
         val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+        val haptic = LocalHapticFeedback.current
 
         DiscoveryContent(
             state = state,
             onBannerClick = { sheetVisible = true },
-            onSkip = viewModel::skipToNext,
             onRetry = viewModel::retry,
             onRadiusChange = viewModel::setRadius,
             onPriceChange = viewModel::setPriceLevel,
             onRefresh = viewModel::refresh,
+            onCompassLock = { haptic.performHapticFeedback(HapticFeedbackType.VirtualKey) },
+            onWidenSearch = { viewModel.setRadius(nextWiderRadius(state.radiusMeters)) },
             modifier = Modifier.fillMaxSize(),
         )
 
@@ -91,17 +119,20 @@ fun DiscoveryScreen(
 private fun DiscoveryContent(
     state: DiscoveryUiState,
     onBannerClick: () -> Unit,
-    onSkip: () -> Unit,
     onRetry: () -> Unit,
     onRadiusChange: (Int) -> Unit,
     onPriceChange: (Int?) -> Unit,
     onRefresh: () -> Unit,
+    onCompassLock: () -> Unit,
+    onWidenSearch: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(
         modifier = modifier
             .statusBarsPadding()
-            .padding(horizontal = 20.dp),
+            .padding(horizontal = 24.dp)
+            .navigationBarsPadding()
+            .padding(bottom = 100.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Row(
@@ -118,7 +149,7 @@ private fun DiscoveryContent(
                 )
                 Text(
                     text = "Pointing you to the nearest spot",
-                    style = MaterialTheme.typography.bodySmall,
+                    style = MaterialTheme.typography.bodyMedium,
                     color = AuroraTokens.TextSecondary,
                     modifier = Modifier.padding(top = 4.dp),
                 )
@@ -155,10 +186,7 @@ private fun DiscoveryContent(
         ) {
             when (state.status) {
                 DiscoveryUiState.Status.Loading -> CircularProgressIndicator(color = AuroraTokens.AccentCyan)
-                DiscoveryUiState.Status.Empty -> CenterMessage(
-                    title = "No places nearby",
-                    body = "We couldn't find anywhere to point to right now.",
-                )
+                DiscoveryUiState.Status.Empty -> EmptyDiscoveryState(onWidenSearch = onWidenSearch)
                 DiscoveryUiState.Status.Error -> CenterMessage(
                     title = "Something went wrong",
                     body = state.errorMessage ?: "Please try again.",
@@ -168,16 +196,30 @@ private fun DiscoveryContent(
                 DiscoveryUiState.Status.Content -> Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
-                    CompassView(rotationDegrees = state.needleRotation)
-                    if (state.distanceLabel.isNotEmpty()) {
-                        Text(
-                            text = state.distanceLabel,
-                            style = MaterialTheme.typography.headlineMedium.copy(
-                                fontFeatureSettings = "tnum",
-                            ),
-                            color = AuroraTokens.TextPrimary,
-                            modifier = Modifier.padding(top = 24.dp),
-                        )
+                    CompassView(
+                        rotationDegrees = state.needleRotation,
+                        onLockOn = onCompassLock,
+                        size = 240.dp,
+                    )
+                    // Distance label crossfades + rises whenever the target place changes
+                    // (walking updates the text in place without re-animating).
+                    AnimatedContent(
+                        targetState = state.currentPlace?.id,
+                        transitionSpec = {
+                            (fadeIn(tween(durationMillis = 350)) +
+                                slideInVertically(tween(durationMillis = 350)) { it / 3 })
+                                .togetherWith(fadeOut(tween(durationMillis = 150)))
+                        },
+                        label = "distanceReveal",
+                    ) { placeId ->
+                        if (placeId != null && state.distanceLabel.isNotEmpty()) {
+                            Text(
+                                text = state.distanceLabel,
+                                style = MaterialTheme.typography.displayMedium,
+                                color = AuroraTokens.TextPrimary,
+                                modifier = Modifier.padding(top = 24.dp),
+                            )
+                        }
                     }
                 }
             }
@@ -194,33 +236,131 @@ private fun DiscoveryContent(
             RadiusSlider(
                 radiusMeters = state.radiusMeters,
                 onRadiusChange = onRadiusChange,
-                modifier = Modifier.padding(
-                    top = 8.dp,
-                    // Clear the floating nav pill when no banner follows the slider.
-                    bottom = if (state.status == DiscoveryUiState.Status.Empty) 88.dp else 0.dp,
-                ),
+                modifier = Modifier.padding(top = 8.dp),
             )
         }
 
-        state.currentPlace?.let { place ->
-            if (state.status == DiscoveryUiState.Status.Content) {
-                AuroraPlaceBanner(
-                    place = place,
-                    distanceLabel = state.distanceLabel,
-                    onClick = onBannerClick,
-                )
-                TextButton(
-                    onClick = onSkip,
-                    modifier = Modifier.padding(top = 4.dp, bottom = 88.dp),
-                ) {
-                    Text(
-                        text = "Not feeling it? Next spot",
-                        style = MaterialTheme.typography.labelLarge,
-                        color = AuroraTokens.TextSecondary,
+        // Banner + skip action reveal together with a spring rise on each new place.
+        if (state.status == DiscoveryUiState.Status.Content) {
+            AnimatedContent(
+                targetState = state.currentPlace,
+                transitionSpec = {
+                    (fadeIn(tween(durationMillis = 300, delayMillis = 80)) +
+                        slideInVertically(
+                            spring(
+                                dampingRatio = Spring.DampingRatioNoBouncy,
+                                stiffness = Spring.StiffnessMediumLow,
+                            ),
+                        ) { it })
+                        .togetherWith(fadeOut(tween(durationMillis = 150)))
+                },
+                label = "placeBannerReveal",
+            ) { place ->
+                if (place != null) {
+                    AuroraPlaceBanner(
+                        place = place,
+                        distanceLabel = state.distanceLabel,
+                        onClick = onBannerClick,
                     )
                 }
             }
         }
+    }
+}
+
+/** Branded empty state: a quiet compass dial (no needle — nothing to point at) + widen CTA. */
+@Composable
+private fun EmptyDiscoveryState(
+    onWidenSearch: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier = modifier.padding(horizontal = 24.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        EmptyCompassIllustration()
+        Text(
+            text = "No spots in range",
+            style = MaterialTheme.typography.titleLarge,
+            color = AuroraTokens.TextPrimary,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.padding(top = 24.dp),
+        )
+        Text(
+            text = "Nothing to point at right now.\nTry widening your search radius.",
+            style = MaterialTheme.typography.bodyMedium,
+            color = AuroraTokens.TextSecondary,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.padding(top = 8.dp),
+        )
+        Button(
+            onClick = onWidenSearch,
+            shape = RoundedCornerShape(16.dp),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = AuroraTokens.AccentCyan,
+                contentColor = AuroraTokens.OnAccent,
+            ),
+            modifier = Modifier
+                .padding(top = 24.dp)
+                .height(48.dp),
+        ) {
+            Text(
+                text = "Widen search",
+                style = MaterialTheme.typography.titleMedium,
+            )
+        }
+    }
+}
+
+/** Simplified compass dial with tick marks but no needle — reads as "no target found". */
+@Composable
+private fun EmptyCompassIllustration(modifier: Modifier = Modifier) {
+    Canvas(modifier = modifier.size(120.dp)) {
+        val radius = min(size.width, size.height) / 2f
+        val center = this.center
+
+        drawCircle(color = AuroraTokens.CompassDialFill, radius = radius, center = center)
+        drawCircle(
+            color = AuroraTokens.CompassDialStroke,
+            radius = radius,
+            center = center,
+            style = Stroke(width = 2f),
+        )
+        drawCircle(
+            color = AuroraTokens.CompassDialInnerStroke,
+            radius = radius * 0.72f,
+            center = center,
+            style = Stroke(width = 1f),
+        )
+
+        val tickCount = 12
+        for (i in 0 until tickCount) {
+            val angle = Math.toRadians((i * 360.0 / tickCount))
+            val isMajor = i % 3 == 0
+            val outer = radius
+            val inner = radius - if (isMajor) 16f else 9f
+            val startX = center.x + (outer * Math.sin(angle)).toFloat()
+            val startY = center.y - (outer * Math.cos(angle)).toFloat()
+            val endX = center.x + (inner * Math.sin(angle)).toFloat()
+            val endY = center.y - (inner * Math.cos(angle)).toFloat()
+            drawLine(
+                color = if (isMajor) {
+                    AuroraTokens.CompassTickMajor.copy(alpha = 0.5f)
+                } else {
+                    AuroraTokens.CompassTickMinor.copy(alpha = 0.5f)
+                },
+                start = Offset(startX, startY),
+                end = Offset(endX, endY),
+                strokeWidth = if (isMajor) 2.5f else 1.5f,
+            )
+        }
+
+        // Muted center dot where the needle hub would be.
+        drawCircle(
+            color = AuroraTokens.TextTertiary,
+            radius = radius * 0.05f,
+            center = center,
+        )
     }
 }
 
@@ -238,7 +378,7 @@ private fun CenterMessage(
         Text(
             text = title,
             style = MaterialTheme.typography.titleLarge,
-            fontWeight = FontWeight.SemiBold,
+            fontWeight = FontWeight.Bold,
             color = AuroraTokens.TextPrimary,
             textAlign = TextAlign.Center,
         )
@@ -250,7 +390,7 @@ private fun CenterMessage(
         )
         if (actionLabel != null && onAction != null) {
             TextButton(onClick = onAction) {
-                Text(actionLabel, color = AuroraTokens.AccentCyan, fontWeight = FontWeight.SemiBold)
+                Text(actionLabel, color = AuroraTokens.AccentCyan, fontWeight = FontWeight.Bold)
             }
         }
     }
