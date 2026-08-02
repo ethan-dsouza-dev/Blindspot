@@ -53,8 +53,8 @@ fun NearbyPlaceRow(
                 indication = null,
                 onClick = onClick,
             )
-            .padding(horizontal = 24.dp, vertical = 8.dp)
-            .listRowPress(interactionSource = interactionSource),
+            .listRowPress(interactionSource = interactionSource)
+            .padding(horizontal = 24.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(16.dp),
     ) {
