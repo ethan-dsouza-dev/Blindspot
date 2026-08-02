@@ -128,7 +128,6 @@ fun PlaceInfoSheet(
                 ) {
                     MetadataChips(
                         place = place,
-                        distanceLabel = distanceLabel,
                         modifier = Modifier.padding(top = 16.dp),
                     )
 
@@ -335,11 +334,10 @@ private fun DescriptionSection(
     }
 }
 
-/** Metadata as chips: distance (accent), rating, price, category (elevated). */
+/** Metadata as chips: rating, price, category (elevated). Distance is shown in the hero scrim. */
 @Composable
 private fun MetadataChips(
     place: Place,
-    distanceLabel: String,
     modifier: Modifier = Modifier,
 ) {
     Row(
@@ -347,12 +345,6 @@ private fun MetadataChips(
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Chip(
-            text = distanceLabel,
-            textColor = AuroraTokens.AccentCyan,
-            backgroundColor = AuroraTokens.AccentCyan.copy(alpha = 0.10f),
-            icon = null,
-        )
         place.ratingLabel?.let { rating ->
             Chip(
                 text = rating,
