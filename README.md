@@ -5,10 +5,10 @@ staring at a map, you hold up your phone and a needle spins to point at the clos
 café, or whatever category you're exploring. Tap the banner for details, or skip to the next place.
 
 ## Current State of App
-<img width="500" height="2340" alt="Screenshot_20260802_224510" src="https://github.com/user-attachments/assets/04291aa6-e010-4f28-993b-b952efc85324" />
-<img width="500" height="2340" alt="Screenshot_20260802_224257" src="https://github.com/user-attachments/assets/3625aba9-7e76-482e-a04f-8312d89c706b" />
-<img width="500" height="2340" alt="Screenshot_20260802_224309" src="https://github.com/user-attachments/assets/02dceaf9-7115-4e76-871a-b921b42f0690" />
-<img width="500" height="2340" alt="Screenshot_20260802_224435" src="https://github.com/user-attachments/assets/c448f111-79db-42a9-8411-001ba009ad7e" />
+<img width="240" alt="Screenshot_20260802_224510" src="https://github.com/user-attachments/assets/04291aa6-e010-4f28-993b-b952efc85324" />
+<img width="240" alt="Screenshot_20260802_224257" src="https://github.com/user-attachments/assets/3625aba9-7e76-482e-a04f-8312d89c706b" />
+<img width="240" alt="Screenshot_20260802_224309" src="https://github.com/user-attachments/assets/02dceaf9-7115-4e76-871a-b921b42f0690" />
+<img width="240" alt="Screenshot_20260802_224435" src="https://github.com/user-attachments/assets/c448f111-79db-42a9-8411-001ba009ad7e" />
 
 
 
