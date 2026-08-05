@@ -3,6 +3,7 @@ package com.blindspot.app.data.repository
 import com.blindspot.app.data.model.Place
 import com.blindspot.app.util.GeoUtils
 import kotlinx.coroutines.delay
+import kotlin.time.Duration.Companion.milliseconds
 
 /**
  * Temporary in-memory [PlaceRepository] used until the backend endpoint exists.
@@ -20,29 +21,48 @@ class MockPlaceRepository : PlaceRepository {
         category: String,
     ): Result<List<Place>> = runCatching {
         // Simulate network latency.
-        delay(600)
+        delay(600.milliseconds)
 
+        placesWithinRadius(latitude, longitude, radiusMeters)
+            .filter { priceLevel == null || it.priceLevel == priceLevel }
+            .sortedBy { place ->
+                GeoUtils.distanceMeters(latitude, longitude, place.latitude, place.longitude)
+            }
+    }
+
+    override suspend fun getTrendingPlaces(
+        latitude: Double,
+        longitude: Double,
+        radiusMeters: Int,
+    ): Result<List<Place>> = runCatching {
+        // Simulate network latency.
+        delay(600.milliseconds)
+
+        // Highest-rated first stands in for the backend's trending score.
+        placesWithinRadius(latitude, longitude, radiusMeters)
+            .sortedByDescending { it.rating ?: 0.0 }
+    }
+
+    private fun placesWithinRadius(
+        latitude: Double,
+        longitude: Double,
+        radiusMeters: Int,
+    ): List<Place> =
         SAMPLE_OFFSETS.mapIndexed { index, offset ->
-            val placeLat = latitude + offset.latOffset
-            val placeLng = longitude + offset.lngOffset
             Place(
                 id = "place_$index",
                 name = offset.name,
                 description = offset.description,
                 category = offset.category,
-                latitude = placeLat,
-                longitude = placeLng,
+                latitude = latitude + offset.latOffset,
+                longitude = longitude + offset.lngOffset,
                 imageUrl = offset.imageUrl,
                 rating = offset.rating,
                 priceLevel = offset.priceLevel,
             )
         }.filter { place ->
-            (priceLevel == null || place.priceLevel == priceLevel) &&
-                GeoUtils.distanceMeters(latitude, longitude, place.latitude, place.longitude) <= radiusMeters
-        }.sortedBy { place ->
-            GeoUtils.distanceMeters(latitude, longitude, place.latitude, place.longitude)
+            GeoUtils.distanceMeters(latitude, longitude, place.latitude, place.longitude) <= radiusMeters
         }
-    }
 
     private data class SampleOffset(
         val name: String,

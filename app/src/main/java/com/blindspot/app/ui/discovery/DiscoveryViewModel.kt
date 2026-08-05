@@ -41,6 +41,11 @@ class PlacesViewModel(
         .map { it.places }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
+    /** Trending places for the Feed screen, in the backend's trending order. Loaded once a
+     * location fix is available; failures leave it empty so the feed degrades gracefully. */
+    private val _trendingPlaces = MutableStateFlow<List<Place>>(emptyList())
+    val trendingPlaces: StateFlow<List<Place>> = _trendingPlaces.asStateFlow()
+
     /** Latest slider radius. Reloads are debounced off this stream so we query once the
      * user stops sliding rather than on every intermediate value. */
     private val radiusMeters = MutableStateFlow(_uiState.value.radiusMeters)
@@ -147,6 +152,7 @@ class PlacesViewModel(
         if (!placesLoaded) {
             placesLoaded = true
             loadPlaces(location)
+            loadTrending(location)
         }
         recomputeCompass()
     }
@@ -202,6 +208,21 @@ class PlacesViewModel(
                         )
                     }
                 }
+        }
+    }
+
+    /**
+     * Loads the trending places near [location] for the Feed screen. Best-effort: failures are
+     * swallowed so an unresponsive trending endpoint never blocks or breaks the feed.
+     */
+    private fun loadTrending(location: Location) {
+        viewModelScope.launch {
+            placeRepository.getTrendingPlaces(
+                location.latitude,
+                location.longitude,
+                _uiState.value.radiusMeters,
+            )
+                .onSuccess { _trendingPlaces.value = it }
         }
     }
 
