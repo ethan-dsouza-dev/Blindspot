@@ -22,4 +22,12 @@ class NetworkPlaceRepository(
     ): Result<List<Place>> = runCatching {
         nearestPlacesService.nearby(latitude, longitude, radiusMeters, priceLevel)
     }
+
+    override suspend fun getTrendingPlaces(
+        latitude: Double,
+        longitude: Double,
+        radiusMeters: Int,
+    ): Result<List<Place>> = runCatching {
+        nearestPlacesService.trending(latitude, longitude, radiusMeters)
+    }
 }

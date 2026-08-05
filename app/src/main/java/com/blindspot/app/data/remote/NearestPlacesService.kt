@@ -24,7 +24,22 @@ class NearestPlacesService(
         api.getNearbyPlaces(latitude, longitude, radiusMeters, priceLevel)
             .map { it.toDomain() }
 
+    /**
+     * Returns the currently trending places near [latitude]/[longitude] within [radiusMeters],
+     * in the backend's trending order. Network/parsing failures propagate to the caller.
+     */
+    suspend fun trending(
+        latitude: Double,
+        longitude: Double,
+        radiusMeters: Int = DEFAULT_TRENDING_RADIUS_METERS,
+    ): List<Place> =
+        api.getTrendingPlaces(latitude, longitude, radiusMeters)
+            .map { it.toDomain() }
+
     companion object {
         const val DEFAULT_RADIUS_METERS = 1000
+
+        /** Backend default radius for the trending endpoint, in meters. */
+        const val DEFAULT_TRENDING_RADIUS_METERS = 5000
     }
 }

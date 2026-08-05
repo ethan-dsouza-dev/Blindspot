@@ -67,6 +67,32 @@ class MockPlaceRepositoryTest {
         }
     }
 
+    @Test
+    fun getTrendingPlaces_onlyReturnsPlacesWithinRadius() = runTest {
+        val radius = 5_000
+
+        val places = repository.getTrendingPlaces(LAT, LNG, radiusMeters = radius).getOrThrow()
+
+        assertTrue(places.isNotEmpty())
+        places.forEach { place ->
+            val distance = GeoUtils.distanceMeters(LAT, LNG, place.latitude, place.longitude)
+            assertTrue("expected ${place.name} within $radius m but was $distance", distance <= radius)
+        }
+    }
+
+    @Test
+    fun getTrendingPlaces_ordersByRatingDescending() = runTest {
+        val places = repository.getTrendingPlaces(
+            LAT,
+            LNG,
+            radiusMeters = PlaceRepository.DEFAULT_TRENDING_RADIUS_METERS,
+        ).getOrThrow()
+
+        assertTrue(places.isNotEmpty())
+        val ratings = places.map { it.rating ?: 0.0 }
+        assertEquals(ratings.sortedDescending(), ratings)
+    }
+
     private companion object {
         const val LAT = 40.0
         const val LNG = -73.0

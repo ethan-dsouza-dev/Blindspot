@@ -36,8 +36,9 @@ import org.koin.androidx.compose.koinViewModel
 
 /**
  * Feed tab: a pinned header (title + category filter chips) above a scrollable Trending Now rail
- * and Near You list loaded from [PlacesViewModel.nearbyPlaces]. Selecting a category filters both
- * sections; a mismatch shows an inline empty state.
+ * (loaded from [PlacesViewModel.trendingPlaces]) and Near You list (loaded from
+ * [PlacesViewModel.nearbyPlaces]). Selecting a category filters both sections; a mismatch shows
+ * an inline empty state.
  *
  * Tapping any venue opens the shared [PlaceInfoSheet]; its "Take me there" action calls
  * [onNavigateToMaps] to guide the user on the Maps tab.
@@ -50,6 +51,7 @@ fun FeedScreen(
     viewModel: PlacesViewModel = koinViewModel(),
 ) {
     val places by viewModel.nearbyPlaces.collectAsStateWithLifecycle()
+    val trendingPlaces by viewModel.trendingPlaces.collectAsStateWithLifecycle()
     var selectedItem by remember { mutableStateOf<TrendingPlaceItem?>(null) }
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
@@ -62,16 +64,29 @@ fun FeedScreen(
         }.sortedBy { it.place.distanceMeters ?: Double.MAX_VALUE }
     }
 
-    val categories = remember(places) {
-        places.map { it.categoryLabel }
+    val trendingItems = remember(trendingPlaces) {
+        trendingPlaces.map { place ->
+            TrendingPlaceItem(
+                place = place,
+                distanceLabel = place.distanceMeters?.let(GeoUtils::formatDistance) ?: "",
+            )
+        }
+    }
+
+    val categories = remember(places, trendingPlaces) {
+        (places + trendingPlaces).map { it.categoryLabel }
             .filter { it.isNotBlank() }
             .distinct()
             .sorted()
     }
     var selectedCategory by remember { mutableStateOf<String?>(null) }
-    val filteredItems = remember(nearbyItems, selectedCategory) {
+    val filteredNearbyItems = remember(nearbyItems, selectedCategory) {
         if (selectedCategory == null) nearbyItems
         else nearbyItems.filter { it.place.categoryLabel == selectedCategory }
+    }
+    val filteredTrendingItems = remember(trendingItems, selectedCategory) {
+        if (selectedCategory == null) trendingItems
+        else trendingItems.filter { it.place.categoryLabel == selectedCategory }
     }
 
     Column(modifier = modifier.fillMaxSize()) {
@@ -94,13 +109,15 @@ fun FeedScreen(
             modifier = Modifier.weight(1f),
             contentPadding = PaddingValues(top = 24.dp, bottom = 96.dp),
         ) {
-            if (filteredItems.isNotEmpty()) {
+            if (filteredTrendingItems.isNotEmpty()) {
                 item {
                     TrendingNowSection(
-                        items = filteredItems,
+                        items = filteredTrendingItems,
                         onCardClick = { selectedItem = it },
                     )
                 }
+            }
+            if (filteredNearbyItems.isNotEmpty()) {
                 item {
                     Text(
                         text = "Near you",
@@ -109,14 +126,15 @@ fun FeedScreen(
                         modifier = Modifier.padding(start = 24.dp, top = 32.dp, bottom = 4.dp),
                     )
                 }
-                items(filteredItems, key = { it.place.id }) { item ->
+                items(filteredNearbyItems, key = { it.place.id }) { item ->
                     NearbyPlaceRow(
                         item = item,
                         onClick = { selectedItem = item },
                     )
                 }
                 // Future sections (Open Late, For You, etc.) go here as additional item { } blocks.
-            } else if (selectedCategory != null) {
+            }
+            if (filteredTrendingItems.isEmpty() && filteredNearbyItems.isEmpty() && selectedCategory != null) {
                 item {
                     FeedFilterEmptyState(category = selectedCategory!!)
                 }
