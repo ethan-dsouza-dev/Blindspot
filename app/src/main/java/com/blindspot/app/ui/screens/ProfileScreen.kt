@@ -37,6 +37,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.layout.ContentScale
 import coil3.compose.AsyncImage
 import com.blindspot.app.data.model.Place
+import com.blindspot.app.ui.ads.ProfileBannerAd
 import com.blindspot.app.ui.components.NearbyPlaceRow
 import com.blindspot.app.ui.components.PlaceInfoSheet
 import com.blindspot.app.ui.components.aurora.AuroraCard
@@ -219,6 +220,9 @@ private fun ProfileScreenContent(
             ) {
                 Text("Sign out")
             }
+        }
+        item {
+            ProfileBannerAd()
         }
     }
 
