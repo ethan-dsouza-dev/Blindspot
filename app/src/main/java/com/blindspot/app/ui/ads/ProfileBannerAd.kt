@@ -3,7 +3,7 @@ package com.blindspot.app.ui.ads
 import androidx.activity.compose.LocalActivity
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.wrapContentSize
+import androidx.compose.foundation.layout.height
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -13,6 +13,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalInspectionMode
+import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.viewinterop.AndroidView
 import com.blindspot.app.ui.components.aurora.AuroraCard
 import com.google.android.libraries.ads.mobile.sdk.banner.AdSize
@@ -22,7 +23,7 @@ import com.google.android.libraries.ads.mobile.sdk.banner.BannerAdRequest
 import com.google.android.libraries.ads.mobile.sdk.common.AdLoadCallback
 import com.google.android.libraries.ads.mobile.sdk.common.LoadAdError
 
-/** Inline adaptive banner ad shown at the bottom of the Profile tab. */
+/** Banner ad shown at the bottom of the Profile tab with a fixed height of one third of the screen. */
 @Composable
 fun ProfileBannerAd(modifier: Modifier = Modifier) {
     AuroraCard(modifier = modifier.fillMaxWidth()) {
@@ -35,11 +36,15 @@ fun ProfileBannerAd(modifier: Modifier = Modifier) {
             val adView = remember { AdView(adContext) }
             val isPreviewMode = LocalInspectionMode.current
             val widthPx = with(LocalDensity.current) { maxWidth.roundToPx() }
+            val heightPx = LocalWindowInfo.current.containerSize.height / 3
+            val heightDp = with(LocalDensity.current) { heightPx.toDp() }
 
-            LaunchedEffect(adContext, widthPx) {
-                if (isPreviewMode || widthPx <= 0) return@LaunchedEffect
-                val adSize = AdSize.getCurrentOrientationInlineAdaptiveBannerAdSize(adContext, widthPx)
-                val adRequest = BannerAdRequest.Builder(AdsConfig.BANNER_AD_UNIT_ID, adSize).build()
+            LaunchedEffect(adContext, widthPx, heightPx) {
+                if (isPreviewMode || widthPx <= 0 || heightPx <= 0) return@LaunchedEffect
+                val adRequest = BannerAdRequest.Builder(
+                    AdsConfig.BANNER_AD_UNIT_ID,
+                    AdSize(widthPx, heightPx),
+                ).build()
                 adView.loadAd(
                     adRequest,
                     object : AdLoadCallback<BannerAd> {
@@ -56,7 +61,9 @@ fun ProfileBannerAd(modifier: Modifier = Modifier) {
 
             AndroidView(
                 factory = { adView },
-                modifier = Modifier.wrapContentSize(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(heightDp),
             )
         }
     }
