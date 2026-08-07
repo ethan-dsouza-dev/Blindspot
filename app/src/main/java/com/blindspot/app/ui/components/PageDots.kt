@@ -18,13 +18,25 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.blindspot.app.ui.theme.AuroraTokens
 
-/** Pill of pager dots; the active dot stretches into a capsule in the accent cyan. */
+/** Max dots rendered at once; larger result sets show a window around the active page so the
+ * indicator never overflows the screen width or hides the current position. */
+private const val MAX_DOTS = 7
+
+/**
+ * Pill of pager dots; the active dot stretches into a capsule in the accent cyan. For more than
+ * [MAX_DOTS] pages only a [MAX_DOTS]-wide window centered on [currentPage] is shown (clamped at
+ * the list ends), so the indicator stays bounded and the active dot always remains visible.
+ */
 @Composable
 fun PageDots(
     pageCount: Int,
     currentPage: Int,
     modifier: Modifier = Modifier,
 ) {
+    val shown = pageCount.coerceAtMost(MAX_DOTS)
+    val windowStart = (currentPage - (MAX_DOTS - 1) / 2)
+        .coerceIn(0, (pageCount - MAX_DOTS).coerceAtLeast(0))
+
     Row(
         modifier = modifier
             .clip(RoundedCornerShape(16.dp))
@@ -33,7 +45,8 @@ fun PageDots(
         horizontalArrangement = Arrangement.spacedBy(6.dp),
         verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
     ) {
-        repeat(pageCount) { index ->
+        repeat(shown) { offset ->
+            val index = windowStart + offset
             val selected = currentPage == index
             val width by animateDpAsState(
                 targetValue = if (selected) 18.dp else 6.dp,
