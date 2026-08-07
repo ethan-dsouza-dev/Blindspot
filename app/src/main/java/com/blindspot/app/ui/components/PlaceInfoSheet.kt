@@ -1,6 +1,5 @@
 package com.blindspot.app.ui.components
 
-import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
@@ -216,7 +215,7 @@ private fun HeroImage(
             }
 
             if (photoCount > 1) {
-                PageIndicator(
+                PageDots(
                     pageCount = photoCount,
                     currentPage = pagerState.currentPage,
                     modifier = Modifier.align(Alignment.TopCenter),
@@ -258,45 +257,6 @@ private fun HeroImage(
                 ),
                 color = AuroraTokens.AccentCyan,
                 modifier = Modifier.padding(top = 4.dp),
-            )
-        }
-    }
-}
-
-/** Pill of pager dots; the active dot stretches into a capsule in the accent cyan. */
-@Composable
-private fun PageIndicator(
-    pageCount: Int,
-    currentPage: Int,
-    modifier: Modifier = Modifier,
-) {
-    Row(
-        modifier = modifier
-            .padding(top = 12.dp)
-            .clip(RoundedCornerShape(16.dp))
-            .background(Color.Black.copy(alpha = 0.35f))
-            .padding(horizontal = 10.dp, vertical = 6.dp),
-        horizontalArrangement = Arrangement.spacedBy(6.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        repeat(pageCount) { index ->
-            val selected = currentPage == index
-            val width by animateDpAsState(
-                targetValue = if (selected) 18.dp else 6.dp,
-                label = "pageDotWidth",
-            )
-            Box(
-                modifier = Modifier
-                    .height(6.dp)
-                    .width(width)
-                    .clip(CircleShape)
-                    .background(
-                        if (selected) {
-                            AuroraTokens.AccentCyan
-                        } else {
-                            AuroraTokens.TextPrimary.copy(alpha = 0.4f)
-                        },
-                    ),
             )
         }
     }

@@ -226,7 +226,9 @@ class PlacesViewModel(
         }
     }
 
-    /** Advances the compass to the next place in the list. */
+    /**
+     * Advances the compass to the next place in the list.
+     */
     fun skipToNext() {
         val state = _uiState.value
         if (!state.hasNext) return

@@ -9,6 +9,7 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -44,6 +45,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -51,6 +54,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.blindspot.app.data.model.Place
 import com.blindspot.app.ui.components.CompassView
+import com.blindspot.app.ui.components.PageDots
 import com.blindspot.app.ui.components.PermissionGate
 import com.blindspot.app.ui.components.PlaceInfoSheet
 import com.blindspot.app.ui.components.PriceFilterDropdown
@@ -68,6 +72,61 @@ private val WIDEN_PRESETS = listOf(500, 1_000, 2_000, 5_000)
 /** Next larger radius preset, or the largest preset if already there. */
 private fun nextWiderRadius(current: Int): Int =
     WIDEN_PRESETS.firstOrNull { it > current } ?: WIDEN_PRESETS.last()
+
+/** Horizontal drag distance (density-scaled) that counts as a swipe to the next/previous place. */
+private val SWIPE_MIN_DISTANCE_DP = 90.dp
+
+/** Horizontal fling velocity (px/s) that counts as a skip even if the drag was short. */
+private const val SWIPE_MIN_VELOCITY_PX_S = 500f
+
+/**
+ * Turns a horizontal drag/fling on the attached node into a skip to the previous or next place.
+ * The content itself stays in place (there is exactly one compass, distance label, and banner);
+ * the ViewModel index change drives their crossfade/spring update. [hasPrevious]/[hasNext] gate
+ * the direction so the ends of the list simply do nothing. A skip fires on a drag past
+ * [SWIPE_MIN_DISTANCE_DP] or on a fling faster than [SWIPE_MIN_VELOCITY_PX_S].
+ */
+@Composable
+private fun Modifier.swipeToChangePlace(
+    hasPrevious: Boolean,
+    hasNext: Boolean,
+    onPrevious: () -> Unit,
+    onNext: () -> Unit,
+): Modifier {
+    val minDistancePx = with(LocalDensity.current) { SWIPE_MIN_DISTANCE_DP.toPx() }
+    return pointerInput(hasPrevious, hasNext) {
+        var totalDrag = 0f
+        var velocity = 0f
+        var lastX = 0f
+        var lastTime = 0L
+
+        detectHorizontalDragGestures(
+            onDragStart = { start ->
+                totalDrag = 0f
+                velocity = 0f
+                lastX = start.x
+                lastTime = 0L
+            },
+            onDragEnd = {
+                when {
+                    (totalDrag <= -minDistancePx || velocity <= -SWIPE_MIN_VELOCITY_PX_S) && hasNext ->
+                        onNext()
+                    (totalDrag >= minDistancePx || velocity >= SWIPE_MIN_VELOCITY_PX_S) && hasPrevious ->
+                        onPrevious()
+                }
+            },
+            onDragCancel = { totalDrag = 0f },
+        ) { change, dragAmount ->
+            totalDrag += dragAmount
+            val now = change.uptimeMillis
+            if (lastTime != 0L && now > lastTime) {
+                velocity = (change.position.x - lastX) / (now - lastTime) * 1000f
+            }
+            lastX = change.position.x
+            lastTime = now
+        }
+    }
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -96,6 +155,8 @@ fun DiscoveryScreen(
             onRefresh = viewModel::refresh,
             onCompassLock = { haptic.performHapticFeedback(HapticFeedbackType.VirtualKey) },
             onWidenSearch = { viewModel.setRadius(nextWiderRadius(state.radiusMeters)) },
+            onSkipNext = viewModel::skipToNext,
+            onSkipPrevious = viewModel::skipToPrevious,
             modifier = Modifier.fillMaxSize(),
         )
 
@@ -125,6 +186,8 @@ private fun DiscoveryContent(
     onRefresh: () -> Unit,
     onCompassLock: () -> Unit,
     onWidenSearch: () -> Unit,
+    onSkipNext: () -> Unit,
+    onSkipPrevious: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(
@@ -178,47 +241,79 @@ private fun DiscoveryContent(
             }
         }
 
-        Box(
-            modifier = Modifier
-                .weight(1f)
-                .fillMaxSize(),
-            contentAlignment = Alignment.Center,
-        ) {
-            when (state.status) {
-                DiscoveryUiState.Status.Loading -> CircularProgressIndicator(color = AuroraTokens.AccentCyan)
-                DiscoveryUiState.Status.Empty -> EmptyDiscoveryState(onWidenSearch = onWidenSearch)
-                DiscoveryUiState.Status.Error -> CenterMessage(
+        when (state.status) {
+            DiscoveryUiState.Status.Loading -> Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxWidth(),
+                contentAlignment = Alignment.Center,
+            ) {
+                CircularProgressIndicator(color = AuroraTokens.AccentCyan)
+            }
+            DiscoveryUiState.Status.Empty -> Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxWidth(),
+                contentAlignment = Alignment.Center,
+            ) {
+                EmptyDiscoveryState(onWidenSearch = onWidenSearch)
+            }
+            DiscoveryUiState.Status.Error -> Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxWidth(),
+                contentAlignment = Alignment.Center,
+            ) {
+                CenterMessage(
                     title = "Something went wrong",
                     body = state.errorMessage ?: "Please try again.",
                     actionLabel = "Retry",
                     onAction = onRetry,
                 )
-                DiscoveryUiState.Status.Content -> Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
+            }
+            DiscoveryUiState.Status.Content -> Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxWidth()
+                        .swipeToChangePlace(
+                            hasPrevious = state.hasPrevious,
+                            hasNext = state.hasNext,
+                            onPrevious = onSkipPrevious,
+                            onNext = onSkipNext,
+                        ),
+                    contentAlignment = Alignment.Center,
                 ) {
-                    CompassView(
-                        rotationDegrees = state.needleRotation,
-                        onLockOn = onCompassLock,
-                        size = 240.dp,
-                    )
-                    // Distance label crossfades + rises whenever the target place changes
-                    // (walking updates the text in place without re-animating).
-                    AnimatedContent(
-                        targetState = state.currentPlace?.id,
-                        transitionSpec = {
-                            (fadeIn(tween(durationMillis = 350)) +
-                                slideInVertically(tween(durationMillis = 350)) { it / 3 })
-                                .togetherWith(fadeOut(tween(durationMillis = 150)))
-                        },
-                        label = "distanceReveal",
-                    ) { placeId ->
-                        if (placeId != null && state.distanceLabel.isNotEmpty()) {
-                            Text(
-                                text = state.distanceLabel,
-                                style = MaterialTheme.typography.displayMedium,
-                                color = AuroraTokens.TextPrimary,
-                                modifier = Modifier.padding(top = 24.dp),
-                            )
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        CompassView(
+                            rotationDegrees = state.needleRotation,
+                            onLockOn = onCompassLock,
+                            size = 240.dp,
+                        )
+                        // Distance label crossfades + rises whenever the target place changes
+                        // (walking updates the text in place without re-animating).
+                        AnimatedContent(
+                            targetState = state.currentPlace?.id,
+                            transitionSpec = {
+                                (fadeIn(tween(durationMillis = 350)) +
+                                    slideInVertically(tween(durationMillis = 350)) { it / 3 })
+                                    .togetherWith(fadeOut(tween(durationMillis = 150)))
+                            },
+                            label = "distanceReveal",
+                        ) { placeId ->
+                            if (placeId != null && state.distanceLabel.isNotEmpty()) {
+                                Text(
+                                    text = state.distanceLabel,
+                                    style = MaterialTheme.typography.displayMedium,
+                                    color = AuroraTokens.TextPrimary,
+                                    modifier = Modifier.padding(top = 24.dp),
+                                )
+                            }
                         }
                     }
                 }
@@ -237,6 +332,15 @@ private fun DiscoveryContent(
                 radiusMeters = state.radiusMeters,
                 onRadiusChange = onRadiusChange,
                 modifier = Modifier.padding(top = 8.dp),
+            )
+        }
+
+        // Position indicator at the bottom, above the banner: how far into the place list we are.
+        if (state.status == DiscoveryUiState.Status.Content && state.places.size > 1) {
+            PageDots(
+                pageCount = state.places.size,
+                currentPage = state.currentIndex,
+                modifier = Modifier.padding(top = 12.dp, bottom = 12.dp),
             )
         }
 
