@@ -81,10 +81,12 @@ fun CompassView(
         label = "needle",
     )
 
-    // "Locked on": the needle points (almost) straight ahead. Fades a glow in behind the tip so
-    // the user gets a quiet confirmation they're walking the right way.
-    val headingError = ((animatedRotation % 360f) + 540f) % 360f - 180f
-    val lockedOn = abs(headingError) <= 10f
+    // "Locked on": the needle target points (almost) straight ahead. Computed from the *target*
+    // rotation rather than the animated needle: when the needle springs between two places its
+    // sweep can pass through straight ahead, which would otherwise fire a spurious lock haptic
+    // (and glow) for a place that isn't actually in front of the user.
+    val targetHeadingError = ((unwrappedTarget % 360f) + 540f) % 360f - 180f
+    val lockedOn = abs(targetHeadingError) <= 10f
     var wasLockedOn by remember { mutableStateOf(false) }
 
     // Trigger haptic on lock-on transition (only the moment it becomes locked).
