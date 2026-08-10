@@ -105,7 +105,9 @@ private fun MainContent(
     onSignOut: () -> Unit,
     onTabSelected: (Destination) -> Unit,
 ) {
-    val mainEntry: NavBackStackEntry = navController.getBackStackEntry(AuthDestinations.MAIN)
+    val mainEntry: NavBackStackEntry = remember(navController) {
+        navController.getBackStackEntry(AuthDestinations.MAIN)
+    }
     val sharedPlacesViewModel: PlacesViewModel = koinViewModel(viewModelStoreOwner = mainEntry)
 
     Box(modifier = Modifier.fillMaxSize()) {

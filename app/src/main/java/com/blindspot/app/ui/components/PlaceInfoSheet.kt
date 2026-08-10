@@ -26,6 +26,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.NearMe
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.Button
@@ -68,10 +70,11 @@ private const val DESCRIPTION_FOLD_CHARS = 130
  * The single shared venue detail sheet, used from every entry point (Discover, Feed, Map) so
  * the venue presentation is identical across the app.
  *
- * The hero is a swipeable photo pager with a gradient scrim and page indicators; the body (chips +
- * description) scrolls while the CTA row stays pinned at the bottom. CTA hierarchy: "Take me
- * there" ([onViewOnMap]) is the primary filled action; "Next" ([onSkip], optional) is the tonal
- * secondary; back is a circular tonal icon button.
+ * The hero is a swipeable photo pager with a gradient scrim, page indicators, and a favorite
+ * toggle in the top-right corner; the body (chips + description) scrolls while the CTA row stays
+ * pinned at the bottom. CTA hierarchy: "Take me there" ([onViewOnMap]) is the primary filled
+ * action; "Next" ([onSkip], optional) is the tonal secondary; back is a circular tonal icon
+ * button.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -79,6 +82,8 @@ fun PlaceInfoSheet(
     place: Place,
     distanceLabel: String,
     sheetState: SheetState,
+    isFavorite: Boolean,
+    onToggleFavorite: () -> Unit,
     onDismiss: () -> Unit,
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
@@ -111,12 +116,14 @@ fun PlaceInfoSheet(
                     .weight(1f, fill = false)
                     .verticalScroll(rememberScrollState()),
             ) {
-                // Hero image with gradient overlay and title.
+                // Hero image with gradient overlay, title, and favorite toggle.
                 HeroImage(
                     photos = place.imageUrl.orEmpty().filter { it.isNotBlank() },
                     contentDescription = place.name,
                     placeName = place.name,
                     distanceLabel = distanceLabel,
+                    isFavorite = isFavorite,
+                    onToggleFavorite = onToggleFavorite,
                     modifier = Modifier.fillMaxWidth(),
                 )
 
@@ -174,14 +181,17 @@ fun PlaceInfoSheet(
     }
 }
 
-/** Hero image: swipeable photo pager with a gradient scrim, page indicators, and place name +
- * distance overlaid on the scrim. Falls back to a single placeholder when there are no photos. */
+/** Hero image: swipeable photo pager with a gradient scrim, page indicators, favorite toggle,
+ * and place name + distance overlaid on the scrim. Falls back to a single placeholder when
+ * there are no photos. */
 @Composable
 private fun HeroImage(
     photos: List<String>,
     contentDescription: String,
     placeName: String,
     distanceLabel: String,
+    isFavorite: Boolean,
+    onToggleFavorite: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val photoShape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
@@ -237,6 +247,14 @@ private fun HeroImage(
                 ),
         )
 
+        FavoriteToggleButton(
+            isFavorite = isFavorite,
+            onClick = onToggleFavorite,
+            modifier = Modifier
+                .align(Alignment.TopEnd)
+                .padding(16.dp),
+        )
+
         Column(
             modifier = Modifier
                 .fillMaxWidth()
@@ -259,6 +277,31 @@ private fun HeroImage(
                 modifier = Modifier.padding(top = 4.dp),
             )
         }
+    }
+}
+
+/** Circular scrim button that toggles favorite status: outline heart when not favorited,
+ * filled accent heart when favorited. */
+@Composable
+private fun FavoriteToggleButton(
+    isFavorite: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Box(
+        modifier = modifier
+            .size(40.dp)
+            .clip(CircleShape)
+            .background(AuroraTokens.BaseDeep.copy(alpha = 0.5f))
+            .clickable(onClick = onClick),
+        contentAlignment = Alignment.Center,
+    ) {
+        Icon(
+            imageVector = if (isFavorite) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
+            contentDescription = if (isFavorite) "Remove from favorites" else "Add to favorites",
+            tint = if (isFavorite) AuroraTokens.AccentCyan else AuroraTokens.TextPrimary,
+            modifier = Modifier.size(22.dp),
+        )
     }
 }
 

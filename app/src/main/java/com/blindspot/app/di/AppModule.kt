@@ -26,8 +26,10 @@ import org.koin.dsl.module
 import org.koin.core.qualifier.named
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
+import com.blindspot.app.data.remote.FavoritesApi
+import com.blindspot.app.data.repository.FavoritesRepository
 
-private const val BASE_URL = "https://api.blindspot.example/"
+private const val BASE_URL = "https://blindspot-api-x8o7.onrender.com/"
 private const val GOOGLE_SERVER_CLIENT_ID = "566311996955-g244lgku4hoarbvkd1874ocrfcd9nnvr.apps.googleusercontent.com"
 
 val appModule = module {
@@ -78,6 +80,9 @@ val appModule = module {
     single { get<Retrofit>().create(PlaceApi::class.java) }
     single { get<Retrofit>().create(RouteApi::class.java) }
 
+    single { get<Retrofit>().create(FavoritesApi::class.java) }
+    single { FavoritesRepository(get()) }
+
     single { NearestPlacesService(get()) }
     single { RoutingService(get()) }
 
@@ -90,5 +95,5 @@ val appModule = module {
 
     viewModel { AuthViewModel(get(), GOOGLE_SERVER_CLIENT_ID) }
     viewModel { PlacesViewModel(get(), get(), get()) }
-    viewModel { ProfileViewModel(get()) }
+    viewModel { ProfileViewModel(get(), get(), get()) }
 }

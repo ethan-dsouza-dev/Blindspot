@@ -10,11 +10,6 @@ class NearestPlacesService(
     private val api: PlaceApi,
 ) {
 
-    /**
-     * Returns the places near [latitude]/[longitude] within [radiusMeters] and matching
-     * [priceLevel] (1..4), nearest-first as ordered by the backend. Network/parsing failures
-     * propagate to the caller.
-     */
     suspend fun nearby(
         latitude: Double,
         longitude: Double,
@@ -24,10 +19,6 @@ class NearestPlacesService(
         api.getNearbyPlaces(latitude, longitude, radiusMeters, priceLevel)
             .map { it.toDomain() }
 
-    /**
-     * Returns the currently trending places near [latitude]/[longitude] within [radiusMeters],
-     * in the backend's trending order. Network/parsing failures propagate to the caller.
-     */
     suspend fun trending(
         latitude: Double,
         longitude: Double,
@@ -36,10 +27,12 @@ class NearestPlacesService(
         api.getTrendingPlaces(latitude, longitude, radiusMeters)
             .map { it.toDomain() }
 
+    /** Resolves a set of place IDs (e.g. favorites) to full [Place] domain objects. */
+    suspend fun byIds(ids: List<String>): List<Place> =
+        if (ids.isEmpty()) emptyList() else api.getPlacesByIds(ids).map { it.toDomain() }
+
     companion object {
         const val DEFAULT_RADIUS_METERS = 1000
-
-        /** Backend default radius for the trending endpoint, in meters. */
         const val DEFAULT_TRENDING_RADIUS_METERS = 5000
     }
 }

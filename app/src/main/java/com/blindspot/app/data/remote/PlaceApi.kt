@@ -25,4 +25,9 @@ interface PlaceApi {
         @Query("lng") longitude: Double,
         @Query("radius") radiusMeters: Int,
     ): List<PlaceDto>
+
+    @GET("bars/byIds")
+    suspend fun getPlacesByIds(
+        @Query("ids") ids: List<String>,
+    ): List<PlaceDto>
 }

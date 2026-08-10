@@ -2,17 +2,22 @@ package com.blindspot.app.ui.profile
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.blindspot.app.auth.TokenStore
+import com.blindspot.app.data.repository.FavoritesRepository
+import com.blindspot.app.data.repository.PlaceRepository
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import com.blindspot.app.auth.TokenStore
 
 class ProfileViewModel(
     private val tokenStore: TokenStore,
+    private val favoritesRepository: FavoritesRepository,
+    private val placeRepository: PlaceRepository,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ProfileUiState())
@@ -20,6 +25,7 @@ class ProfileViewModel(
 
     init {
         loadProfile()
+        observeFavorites()
     }
 
     fun loadProfile() {
@@ -33,9 +39,9 @@ class ProfileViewModel(
                         name = user?.name?.takeIf { it.isNotBlank() } ?: user?.email ?: "User",
                         email = user?.email ?: "",
                         avatarUrl = user?.pictureUrl,
-                        savedPlaces = emptyList(),
                     )
                 }
+                favoritesRepository.refresh()
             } catch (e: Exception) {
                 _uiState.update {
                     it.copy(
@@ -43,6 +49,23 @@ class ProfileViewModel(
                         error = e.message ?: "Couldn't load profile",
                     )
                 }
+            }
+        }
+    }
+
+    /** Keeps `savedPlaces` in sync with the shared favorites set — this is the same list that
+     * drives the heart icon in [com.blindspot.app.ui.components.PlaceInfoSheet] everywhere else
+     * in the app, so favoriting/unfavoriting from any screen updates here automatically. */
+    private fun observeFavorites() {
+        viewModelScope.launch {
+            favoritesRepository.favoritePlaceIds.collectLatest { ids ->
+                if (ids.isEmpty()) {
+                    _uiState.update { it.copy(savedPlaces = emptyList()) }
+                    return@collectLatest
+                }
+                placeRepository.getPlacesByIds(ids.toList())
+                    .onSuccess { places -> _uiState.update { it.copy(savedPlaces = places) } }
+                    .onFailure { /* keep the previous list on a transient failure */ }
             }
         }
     }
