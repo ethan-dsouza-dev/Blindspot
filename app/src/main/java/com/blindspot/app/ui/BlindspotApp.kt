@@ -31,6 +31,7 @@ import com.blindspot.app.ui.screens.ProfileScreen
 import com.blindspot.app.ui.screens.SignInScreen
 import org.koin.androidx.compose.koinViewModel
 import org.koin.compose.koinInject
+import com.blindspot.app.data.repository.FavoritesRepository
 
 @Composable
 fun BlindspotApp() {
@@ -38,6 +39,7 @@ fun BlindspotApp() {
     val tokenStore: TokenStore = koinInject()
     val isAuthenticated by tokenStore.isAuthenticatedFlow.collectAsStateWithLifecycle()
     val authViewModel: AuthViewModel = koinViewModel()
+    val favoritesRepository: FavoritesRepository = koinInject()
 
     LaunchedEffect(isAuthenticated) {
         val currentRoute = navController.currentBackStackEntry?.destination?.route
@@ -46,6 +48,9 @@ fun BlindspotApp() {
                 popUpTo(AuthDestinations.MAIN) { inclusive = true }
                 launchSingleTop = true
             }
+        }
+        if (isAuthenticated) {
+            runCatching { favoritesRepository.refresh() }
         }
     }
 

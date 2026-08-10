@@ -41,7 +41,6 @@ class ProfileViewModel(
                         avatarUrl = user?.pictureUrl,
                     )
                 }
-                favoritesRepository.refresh()
             } catch (e: Exception) {
                 _uiState.update {
                     it.copy(
