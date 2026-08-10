@@ -32,6 +32,8 @@ import com.blindspot.app.ui.screens.SignInScreen
 import org.koin.androidx.compose.koinViewModel
 import org.koin.compose.koinInject
 import com.blindspot.app.data.repository.FavoritesRepository
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
 
 @Composable
 fun BlindspotApp() {
@@ -43,14 +45,23 @@ fun BlindspotApp() {
 
     LaunchedEffect(isAuthenticated) {
         val currentRoute = navController.currentBackStackEntry?.destination?.route
-        if (!isAuthenticated && currentRoute != null && currentRoute != AuthDestinations.SIGN_IN) {
-            navController.navigate(AuthDestinations.SIGN_IN) {
-                popUpTo(AuthDestinations.MAIN) { inclusive = true }
-                launchSingleTop = true
+
+        if (!isAuthenticated) {
+            favoritesRepository.clear()
+            if (currentRoute != null && currentRoute != AuthDestinations.SIGN_IN) {
+                navController.navigate(AuthDestinations.SIGN_IN) {
+                    popUpTo(AuthDestinations.MAIN) { inclusive = true }
+                    launchSingleTop = true
+                }
             }
-        }
-        if (isAuthenticated) {
-            runCatching { favoritesRepository.refresh() }
+        } else {
+            var attempt = 0
+            while (isActive) {
+                val result = runCatching { favoritesRepository.refresh() }
+                if (result.isSuccess) break
+                attempt++
+                delay(minOf(30_000L, 1_000L * (1 shl attempt.coerceAtMost(5))))
+            }
         }
     }
 

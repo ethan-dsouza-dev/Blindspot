@@ -12,11 +12,10 @@ import kotlinx.coroutines.sync.withLock
 /**
  * Holds the current user's favorited place IDs as shared state so every screen showing
  * [com.blindspot.app.ui.components.PlaceInfoSheet] reflects the same favorite status.
- * Applies an optimistic update on toggle and rolls back if the network call fails.
  *
- * [toggleMutex] serializes toggles so concurrent taps (e.g. rapid double-tap, or toggling from
- * two screens at once) can't interleave — each toggle's read-update-rollback runs atomically
- * with respect to the others, preventing a failed request from undoing a different successful one.
+ * [mutex] serializes refresh() and toggleFavorite() against each other — without this, a
+ * refresh landing mid-toggle could either erase a successful optimistic update or have a
+ * toggle roll back against data the refresh just replaced.
  */
 class FavoritesRepository(
     private val favoritesApi: FavoritesApi,
@@ -24,14 +23,14 @@ class FavoritesRepository(
     private val _favoritePlaceIds = MutableStateFlow<Set<String>>(emptySet())
     val favoritePlaceIds: StateFlow<Set<String>> = _favoritePlaceIds.asStateFlow()
 
-    private val toggleMutex = Mutex()
+    private val mutex = Mutex()
 
-    suspend fun refresh() {
+    suspend fun refresh() = mutex.withLock {
         val response = favoritesApi.getFavorites()
         _favoritePlaceIds.value = response.placeIds.toSet()
     }
 
-    suspend fun toggleFavorite(placeId: String) = toggleMutex.withLock {
+    suspend fun toggleFavorite(placeId: String) = mutex.withLock {
         val wasFavorite = placeId in _favoritePlaceIds.value
 
         _favoritePlaceIds.update { current ->
@@ -50,5 +49,11 @@ class FavoritesRepository(
             }
             throw e
         }
+    }
+
+    /** Clears local state on sign-out, so a different account signing in on the same session
+     * never briefly sees the previous user's favorites before its own refresh completes. */
+    fun clear() {
+        _favoritePlaceIds.value = emptySet()
     }
 }
