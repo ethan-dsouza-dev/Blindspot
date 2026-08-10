@@ -2,6 +2,7 @@ package com.blindspot.app.data.repository
 
 import com.blindspot.app.data.remote.FavoriteRequest
 import com.blindspot.app.data.remote.FavoritesApi
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -13,9 +14,9 @@ import kotlinx.coroutines.sync.withLock
  * Holds the current user's favorited place IDs as shared state so every screen showing
  * [com.blindspot.app.ui.components.PlaceInfoSheet] reflects the same favorite status.
  *
- * [mutex] serializes refresh() and toggleFavorite() against each other — without this, a
- * refresh landing mid-toggle could either erase a successful optimistic update or have a
- * toggle roll back against data the refresh just replaced.
+ * [mutex] serializes refresh(), toggleFavorite(), and clear() against each other — every
+ * mutation to [_favoritePlaceIds] goes through it, so sign-out can never interleave with an
+ * in-flight toggle's rollback, and a refresh can never land mid-toggle.
  */
 class FavoritesRepository(
     private val favoritesApi: FavoritesApi,
@@ -43,6 +44,11 @@ class FavoritesRepository(
             } else {
                 favoritesApi.addFavorite(FavoriteRequest(placeId))
             }
+        } catch (e: CancellationException) {
+            // The screen/session is going away (e.g. sign-out). Don't roll back: a rollback
+            // here would write this account's data back into the singleton after clear() may
+            // have already reset it for the next account, leaking stale favorites.
+            throw e
         } catch (e: Exception) {
             _favoritePlaceIds.update { current ->
                 if (wasFavorite) current + placeId else current - placeId
@@ -51,9 +57,10 @@ class FavoritesRepository(
         }
     }
 
-    /** Clears local state on sign-out, so a different account signing in on the same session
-     * never briefly sees the previous user's favorites before its own refresh completes. */
-    fun clear() {
+    /** Clears local state on sign-out. Mutex-protected so it can never interleave with an
+     * in-flight refresh() or toggleFavorite() — it either runs fully before or fully after
+     * any in-progress mutation, never in the middle of one. */
+    suspend fun clear() = mutex.withLock {
         _favoritePlaceIds.value = emptySet()
     }
 }
