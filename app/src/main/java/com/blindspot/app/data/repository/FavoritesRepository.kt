@@ -14,6 +14,13 @@ import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
 
+/** Thrown when a favorite is toggled before the initial favorites load has completed (or after
+ * it has repeatedly failed) — the true favorited state of [placeId] is unknown, so toggling
+ * would risk sending the opposite of what the user intended. Callers should surface this as a
+ * "try again" message rather than silently doing nothing or guessing. */
+class FavoritesNotReadyException(val placeId: String) :
+    Exception("Favorites not yet loaded; can't determine state for $placeId")
+
 class FavoritesRepository(
     private val favoritesApi: FavoritesApi,
 ) {
@@ -31,13 +38,13 @@ class FavoritesRepository(
         if (!initialized.isCompleted) initialized.complete(Unit)
     }
 
+    /** @throws FavoritesNotReadyException if the initial load hasn't completed within
+     * [INIT_WAIT_TIMEOUT_MS] — the caller must not assume this toggle happened. */
     suspend fun toggleFavorite(placeId: String) {
-        // Wait for the initial load so a toggle right after sign-in doesn't act on a still-empty
-        // set — but only up to INIT_WAIT_TIMEOUT_MS. If refresh() keeps failing (offline, outage),
-        // give up waiting and proceed on whatever local state exists rather than hanging the UI
-        // forever; the toggle still applies its own optimistic update + rollback below, and a
-        // later successful refresh() reconciles anything this got wrong.
-        withTimeoutOrNull(INIT_WAIT_TIMEOUT_MS) { initialized.await() }
+        val ready = withTimeoutOrNull(INIT_WAIT_TIMEOUT_MS) { initialized.await() }
+        if (ready == null) {
+            throw FavoritesNotReadyException(placeId)
+        }
 
         mutex.withLock {
             val wasFavorite = placeId in _favoritePlaceIds.value
