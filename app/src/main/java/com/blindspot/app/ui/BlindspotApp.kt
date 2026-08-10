@@ -34,6 +34,7 @@ import org.koin.compose.koinInject
 import com.blindspot.app.data.repository.FavoritesRepository
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
+import kotlin.coroutines.cancellation.CancellationException
 
 @Composable
 fun BlindspotApp() {
@@ -53,14 +54,19 @@ fun BlindspotApp() {
                     launchSingleTop = true
                 }
             }
-            favoritesRepository.clearAsync()
+            favoritesRepository.clear()
         } else {
             var attempt = 0
             while (isActive) {
-                val result = runCatching { favoritesRepository.refresh() }
-                if (result.isSuccess) break
-                attempt++
-                delay(minOf(30_000L, 1_000L * (1 shl attempt.coerceAtMost(5))))
+                try {
+                    favoritesRepository.refresh()
+                    break
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: Exception) {
+                    attempt++
+                    delay(minOf(30_000L, 1_000L * (1 shl attempt.coerceAtMost(5))))
+                }
             }
         }
     }

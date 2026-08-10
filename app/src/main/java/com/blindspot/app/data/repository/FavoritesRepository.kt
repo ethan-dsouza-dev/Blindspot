@@ -3,16 +3,14 @@ package com.blindspot.app.data.repository
 import com.blindspot.app.data.remote.FavoriteRequest
 import com.blindspot.app.data.remote.FavoritesApi
 import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withContext
 
 class FavoritesRepository(
     private val favoritesApi: FavoritesApi,
@@ -21,11 +19,6 @@ class FavoritesRepository(
     val favoritePlaceIds: StateFlow<Set<String>> = _favoritePlaceIds.asStateFlow()
 
     private val mutex = Mutex()
-
-    // Repository-owned, not tied to any composable's lifecycle — a caller invoking clearAsync()
-    // as fire-and-forget from a LaunchedEffect that then gets cancelled (e.g. rapid sign-out /
-    // re-auth) can't take this scope down with it.
-    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     suspend fun refresh() = mutex.withLock {
         val response = favoritesApi.getFavorites()
@@ -55,13 +48,14 @@ class FavoritesRepository(
         }
     }
 
-    suspend fun clear() = mutex.withLock {
-        _favoritePlaceIds.value = emptySet()
-    }
-
-    /** Fire-and-forget clear for callers (e.g. sign-out) that must not block on it. Runs on the
-     * repository's own scope so it survives cancellation of whatever caller triggered it. */
-    fun clearAsync() {
-        scope.launch { clear() }
+    /** Clears local state on sign-out. Wrapped in [NonCancellable] so it always runs to
+     * completion even if the caller's coroutine (e.g. a LaunchedEffect cancelled by a fast
+     * sign-in immediately after sign-out) is being torn down — and because it's invoked inline,
+     * before any subsequent refresh() call even exists, it reaches [mutex] first, so the fair
+     * FIFO queue guarantees it completes before that refresh() can run. */
+    suspend fun clear() = withContext(NonCancellable) {
+        mutex.withLock {
+            _favoritePlaceIds.value = emptySet()
+        }
     }
 }
