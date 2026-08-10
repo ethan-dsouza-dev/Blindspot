@@ -66,6 +66,7 @@ import com.blindspot.app.ui.theme.AuroraTokens
 import org.koin.androidx.compose.koinViewModel
 import kotlin.math.min
 import androidx.compose.runtime.rememberCoroutineScope
+import com.blindspot.app.data.repository.FavoritesNotReadyException
 import com.blindspot.app.data.repository.FavoritesRepository
 import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
@@ -176,7 +177,14 @@ fun DiscoveryScreen(
                 sheetState = sheetState,
                 isFavorite = place.id in favoriteIds,
                 onToggleFavorite = {
-                    coroutineScope.launch { favoritesRepository.toggleFavorite(place.id) }
+                    coroutineScope.launch {
+                        try {
+                            favoritesRepository.toggleFavorite(place.id)
+                        } catch (e: FavoritesNotReadyException) {
+                            // Favorites haven't loaded yet (or kept failing) — refuse rather than guess.
+                            // The heart stays as-is; user can retry once connectivity/load succeeds.
+                        }
+                    }
                 },
                 onDismiss = { sheetVisible = false },
                 onSkip = { viewModel.skipToNext() },

@@ -73,6 +73,9 @@ import org.maplibre.spatialk.geojson.Position
 import kotlin.math.ln
 import com.blindspot.app.data.repository.FavoritesRepository
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.blindspot.app.data.repository.FavoritesNotReadyException
+import kotlinx.coroutines.coroutineScope
+
 
 // Dark Matter fork keeps the map legible against the app's dark-only "Midnight Aurora" theme.
 private const val OPENFREEMAP_STYLE_URL = "https://tiles.openfreemap.org/styles/dark"
@@ -392,7 +395,14 @@ fun MapsScreen(
                 sheetState = sheetState,
                 isFavorite = targetPlace.id in favoriteIds,
                 onToggleFavorite = {
-                    scope.launch { favoritesRepository.toggleFavorite(targetPlace.id) }
+                    scope.launch {
+                        try {
+                            favoritesRepository.toggleFavorite(targetPlace.id)
+                        } catch (e: FavoritesNotReadyException) {
+                            // Favorites haven't loaded yet (or kept failing) — refuse rather than guess.
+                            // The heart stays as-is; user can retry once connectivity/load succeeds.
+                        }
+                    }
                 },
                 onDismiss = { sheetVisible = false },
                 onBack = { sheetVisible = false },

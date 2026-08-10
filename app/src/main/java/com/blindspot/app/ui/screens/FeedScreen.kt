@@ -37,6 +37,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import com.blindspot.app.data.repository.FavoritesRepository
 import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
+import com.blindspot.app.data.repository.FavoritesNotReadyException
 
 /**
  * Feed tab: a pinned header (title + category filter chips) above a scrollable Trending Now rail
@@ -156,7 +157,14 @@ fun FeedScreen(
             sheetState = sheetState,
             isFavorite = item.place.id in favoriteIds,
             onToggleFavorite = {
-                coroutineScope.launch { favoritesRepository.toggleFavorite(item.place.id) }
+                coroutineScope.launch {
+                    try {
+                        favoritesRepository.toggleFavorite(item.place.id)
+                    } catch (e: FavoritesNotReadyException) {
+                        // Favorites haven't loaded yet (or kept failing) — refuse rather than guess.
+                        // The heart stays as-is; user can retry once connectivity/load succeeds.
+                    }
+                }
             },
             onDismiss = { selectedItem = null },
             onBack = { selectedItem = null },
