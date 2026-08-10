@@ -13,6 +13,7 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.delay
 
 class ProfileViewModel(
     private val tokenStore: TokenStore,
@@ -62,9 +63,17 @@ class ProfileViewModel(
                     _uiState.update { it.copy(savedPlaces = emptyList()) }
                     return@collectLatest
                 }
-                placeRepository.getPlacesByIds(ids.toList())
-                    .onSuccess { places -> _uiState.update { it.copy(savedPlaces = places) } }
-                    .onFailure { /* keep the previous list on a transient failure */ }
+
+                var attempt = 0
+                while (true) {
+                    val result = placeRepository.getPlacesByIds(ids.toList())
+                    if (result.isSuccess) {
+                        _uiState.update { it.copy(savedPlaces = result.getOrThrow()) }
+                        break
+                    }
+                    attempt++
+                    delay(minOf(30_000L, 1_000L * (1 shl attempt.coerceAtMost(5))))
+                }
             }
         }
     }

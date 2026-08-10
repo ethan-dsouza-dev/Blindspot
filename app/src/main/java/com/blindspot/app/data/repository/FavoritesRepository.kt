@@ -12,6 +12,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeoutOrNull
 
 class FavoritesRepository(
     private val favoritesApi: FavoritesApi,
@@ -21,10 +22,6 @@ class FavoritesRepository(
 
     private val mutex = Mutex()
 
-    // Completed by the first successful refresh() of a session. toggleFavorite() awaits this
-    // before deriving wasFavorite from local state, so a toggle firing before the initial load
-    // finishes can never race it — regardless of which coroutine's mutex.withLock actually runs
-    // first. Reset by clear() so the next account's toggles wait for its own fresh load.
     @Volatile
     private var initialized = CompletableDeferred<Unit>()
 
@@ -35,7 +32,13 @@ class FavoritesRepository(
     }
 
     suspend fun toggleFavorite(placeId: String) {
-        initialized.await()
+        // Wait for the initial load so a toggle right after sign-in doesn't act on a still-empty
+        // set — but only up to INIT_WAIT_TIMEOUT_MS. If refresh() keeps failing (offline, outage),
+        // give up waiting and proceed on whatever local state exists rather than hanging the UI
+        // forever; the toggle still applies its own optimistic update + rollback below, and a
+        // later successful refresh() reconciles anything this got wrong.
+        withTimeoutOrNull(INIT_WAIT_TIMEOUT_MS) { initialized.await() }
+
         mutex.withLock {
             val wasFavorite = placeId in _favoritePlaceIds.value
 
@@ -65,5 +68,9 @@ class FavoritesRepository(
             _favoritePlaceIds.value = emptySet()
             initialized = CompletableDeferred()
         }
+    }
+
+    private companion object {
+        const val INIT_WAIT_TIMEOUT_MS = 5_000L
     }
 }
