@@ -47,13 +47,13 @@ fun BlindspotApp() {
         val currentRoute = navController.currentBackStackEntry?.destination?.route
 
         if (!isAuthenticated) {
-            favoritesRepository.clear()
             if (currentRoute != null && currentRoute != AuthDestinations.SIGN_IN) {
                 navController.navigate(AuthDestinations.SIGN_IN) {
                     popUpTo(AuthDestinations.MAIN) { inclusive = true }
                     launchSingleTop = true
                 }
             }
+            favoritesRepository.clearAsync()
         } else {
             var attempt = 0
             while (isActive) {
