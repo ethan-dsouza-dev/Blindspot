@@ -43,6 +43,25 @@ class MockPlaceRepository : PlaceRepository {
             .sortedByDescending { it.rating ?: 0.0 }
     }
 
+    override suspend fun getPlacesByIds(ids: List<String>): Result<List<Place>> = runCatching {
+        delay(600.milliseconds)
+
+        val idSet = ids.toSet()
+        SAMPLE_OFFSETS.mapIndexed { index, offset ->
+            Place(
+                id = "place_$index",
+                name = offset.name,
+                description = offset.description,
+                category = offset.category,
+                latitude = 0.0,
+                longitude = 0.0,
+                imageUrl = offset.imageUrl,
+                rating = offset.rating,
+                priceLevel = offset.priceLevel,
+            )
+        }.filter { it.id in idSet }
+    }
+
     private fun placesWithinRadius(
         latitude: Double,
         longitude: Double,

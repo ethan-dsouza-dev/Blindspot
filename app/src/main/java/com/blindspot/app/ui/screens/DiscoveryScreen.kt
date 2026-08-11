@@ -65,6 +65,11 @@ import com.blindspot.app.ui.discovery.PlacesViewModel
 import com.blindspot.app.ui.theme.AuroraTokens
 import org.koin.androidx.compose.koinViewModel
 import kotlin.math.min
+import androidx.compose.runtime.rememberCoroutineScope
+import com.blindspot.app.data.repository.FavoritesNotReadyException
+import com.blindspot.app.data.repository.FavoritesRepository
+import kotlinx.coroutines.launch
+import org.koin.compose.koinInject
 
 /** Radius presets used by the empty-state "Widen search" action. */
 private val WIDEN_PRESETS = listOf(500, 1_000, 2_000, 5_000)
@@ -146,6 +151,10 @@ fun DiscoveryScreen(
         val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
         val haptic = LocalHapticFeedback.current
 
+        val favoritesRepository: FavoritesRepository = koinInject()
+        val favoriteIds by favoritesRepository.favoritePlaceIds.collectAsStateWithLifecycle()
+        val coroutineScope = rememberCoroutineScope()
+
         DiscoveryContent(
             state = state,
             onBannerClick = { sheetVisible = true },
@@ -166,6 +175,17 @@ fun DiscoveryScreen(
                 place = place,
                 distanceLabel = state.distanceLabel,
                 sheetState = sheetState,
+                isFavorite = place.id in favoriteIds,
+                onToggleFavorite = {
+                    coroutineScope.launch {
+                        try {
+                            favoritesRepository.toggleFavorite(place.id)
+                        } catch (e: FavoritesNotReadyException) {
+                            // Favorites haven't loaded yet (or kept failing) — refuse rather than guess.
+                            // The heart stays as-is; user can retry once connectivity/load succeeds.
+                        }
+                    }
+                },
                 onDismiss = { sheetVisible = false },
                 onSkip = { viewModel.skipToNext() },
                 onBack = { viewModel.skipToPrevious() },

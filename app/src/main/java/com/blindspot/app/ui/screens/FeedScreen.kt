@@ -33,6 +33,11 @@ import com.blindspot.app.ui.theme.AuroraTokens
 import com.blindspot.app.util.GeoUtils
 import com.blindspot.app.util.categoryLabel
 import org.koin.androidx.compose.koinViewModel
+import androidx.compose.runtime.rememberCoroutineScope
+import com.blindspot.app.data.repository.FavoritesRepository
+import kotlinx.coroutines.launch
+import org.koin.compose.koinInject
+import com.blindspot.app.data.repository.FavoritesNotReadyException
 
 /**
  * Feed tab: a pinned header (title + category filter chips) above a scrollable Trending Now rail
@@ -54,6 +59,9 @@ fun FeedScreen(
     val trendingPlaces by viewModel.trendingPlaces.collectAsStateWithLifecycle()
     var selectedItem by remember { mutableStateOf<TrendingPlaceItem?>(null) }
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val favoritesRepository: FavoritesRepository = koinInject()
+    val favoriteIds by favoritesRepository.favoritePlaceIds.collectAsStateWithLifecycle()
+    val coroutineScope = rememberCoroutineScope()
 
     val nearbyItems = remember(places) {
         places.map { place ->
@@ -147,6 +155,17 @@ fun FeedScreen(
             place = item.place,
             distanceLabel = item.distanceLabel,
             sheetState = sheetState,
+            isFavorite = item.place.id in favoriteIds,
+            onToggleFavorite = {
+                coroutineScope.launch {
+                    try {
+                        favoritesRepository.toggleFavorite(item.place.id)
+                    } catch (e: FavoritesNotReadyException) {
+                        // Favorites haven't loaded yet (or kept failing) — refuse rather than guess.
+                        // The heart stays as-is; user can retry once connectivity/load succeeds.
+                    }
+                }
+            },
             onDismiss = { selectedItem = null },
             onBack = { selectedItem = null },
             showBack = false,

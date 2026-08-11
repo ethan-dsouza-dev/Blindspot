@@ -46,6 +46,12 @@ import com.blindspot.app.ui.profile.ProfileUiState
 import com.blindspot.app.ui.profile.ProfileViewModel
 import com.blindspot.app.ui.theme.AuroraTokens
 import org.koin.androidx.compose.koinViewModel
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.blindspot.app.data.repository.FavoritesNotReadyException
+import com.blindspot.app.data.repository.FavoritesRepository
+import kotlinx.coroutines.launch
+import org.koin.compose.koinInject
 
 private const val SAVED_PLACE_LABEL = "Saved"
 
@@ -76,6 +82,9 @@ private fun ProfileScreenContent(
 ) {
     var selectedPlace by remember { mutableStateOf<Place?>(null) }
     val sheetState = rememberModalBottomSheetState()
+    val favoritesRepository: FavoritesRepository = koinInject()
+    val favoriteIds by favoritesRepository.favoritePlaceIds.collectAsStateWithLifecycle()
+    val coroutineScope = rememberCoroutineScope()
 
     if (uiState.isLoading) {
         Column(
@@ -231,6 +240,17 @@ private fun ProfileScreenContent(
             place = place,
             distanceLabel = SAVED_PLACE_LABEL,
             sheetState = sheetState,
+            isFavorite = place.id in favoriteIds,
+            onToggleFavorite = {
+                coroutineScope.launch {
+                    try {
+                        favoritesRepository.toggleFavorite(place.id)
+                    } catch (e: FavoritesNotReadyException) {
+                        // Favorites haven't loaded yet (or kept failing) — refuse rather than guess.
+                        // The heart stays as-is; user can retry once connectivity/load succeeds.
+                    }
+                }
+            },
             onDismiss = { selectedPlace = null },
             onBack = { selectedPlace = null },
             showBack = false,

@@ -71,6 +71,11 @@ import org.maplibre.spatialk.geojson.LineString
 import org.maplibre.spatialk.geojson.Point
 import org.maplibre.spatialk.geojson.Position
 import kotlin.math.ln
+import com.blindspot.app.data.repository.FavoritesRepository
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.blindspot.app.data.repository.FavoritesNotReadyException
+import kotlinx.coroutines.coroutineScope
+
 
 // Dark Matter fork keeps the map legible against the app's dark-only "Midnight Aurora" theme.
 private const val OPENFREEMAP_STYLE_URL = "https://tiles.openfreemap.org/styles/dark"
@@ -113,6 +118,8 @@ fun MapsScreen(
         val cameraState = rememberCameraState()
         val scope = rememberCoroutineScope()
         val routeRepository = koinInject<RouteRepository>()
+        val favoritesRepository = koinInject<FavoritesRepository>()
+        val favoriteIds by favoritesRepository.favoritePlaceIds.collectAsStateWithLifecycle()
         var hasCenteredOnUser by remember { mutableStateOf(false) }
         var framedTargetId by remember { mutableStateOf<String?>(null) }
         // Decoded route geometry for the current destination; null until it resolves (or when the
@@ -386,6 +393,17 @@ fun MapsScreen(
                 place = targetPlace,
                 distanceLabel = sheetDistanceLabel,
                 sheetState = sheetState,
+                isFavorite = targetPlace.id in favoriteIds,
+                onToggleFavorite = {
+                    scope.launch {
+                        try {
+                            favoritesRepository.toggleFavorite(targetPlace.id)
+                        } catch (e: FavoritesNotReadyException) {
+                            // Favorites haven't loaded yet (or kept failing) — refuse rather than guess.
+                            // The heart stays as-is; user can retry once connectivity/load succeeds.
+                        }
+                    }
+                },
                 onDismiss = { sheetVisible = false },
                 onBack = { sheetVisible = false },
                 showBack = false,

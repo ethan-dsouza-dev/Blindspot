@@ -31,6 +31,10 @@ import com.blindspot.app.ui.screens.ProfileScreen
 import com.blindspot.app.ui.screens.SignInScreen
 import org.koin.androidx.compose.koinViewModel
 import org.koin.compose.koinInject
+import com.blindspot.app.data.repository.FavoritesRepository
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
+import kotlin.coroutines.cancellation.CancellationException
 
 @Composable
 fun BlindspotApp() {
@@ -38,13 +42,31 @@ fun BlindspotApp() {
     val tokenStore: TokenStore = koinInject()
     val isAuthenticated by tokenStore.isAuthenticatedFlow.collectAsStateWithLifecycle()
     val authViewModel: AuthViewModel = koinViewModel()
+    val favoritesRepository: FavoritesRepository = koinInject()
 
     LaunchedEffect(isAuthenticated) {
         val currentRoute = navController.currentBackStackEntry?.destination?.route
-        if (!isAuthenticated && currentRoute != null && currentRoute != AuthDestinations.SIGN_IN) {
-            navController.navigate(AuthDestinations.SIGN_IN) {
-                popUpTo(AuthDestinations.MAIN) { inclusive = true }
-                launchSingleTop = true
+
+        if (!isAuthenticated) {
+            if (currentRoute != null && currentRoute != AuthDestinations.SIGN_IN) {
+                navController.navigate(AuthDestinations.SIGN_IN) {
+                    popUpTo(AuthDestinations.MAIN) { inclusive = true }
+                    launchSingleTop = true
+                }
+            }
+            favoritesRepository.clear()
+        } else {
+            var attempt = 0
+            while (isActive) {
+                try {
+                    favoritesRepository.refresh()
+                    break
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: Exception) {
+                    attempt++
+                    delay(minOf(30_000L, 1_000L * (1 shl attempt.coerceAtMost(5))))
+                }
             }
         }
     }
@@ -105,7 +127,9 @@ private fun MainContent(
     onSignOut: () -> Unit,
     onTabSelected: (Destination) -> Unit,
 ) {
-    val mainEntry: NavBackStackEntry = navController.getBackStackEntry(AuthDestinations.MAIN)
+    val mainEntry: NavBackStackEntry = remember(navController) {
+        navController.getBackStackEntry(AuthDestinations.MAIN)
+    }
     val sharedPlacesViewModel: PlacesViewModel = koinViewModel(viewModelStoreOwner = mainEntry)
 
     Box(modifier = Modifier.fillMaxSize()) {
