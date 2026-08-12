@@ -134,7 +134,11 @@ private fun MainContent(
 
     Box(modifier = Modifier.fillMaxSize()) {
         when (selected) {
-            Destination.Maps -> MapsScreen(targetPlace = mapTarget, onClearTarget = onClearTarget)
+            Destination.Maps -> MapsScreen(
+                viewModel = sharedPlacesViewModel,
+                targetPlace = mapTarget,
+                onClearTarget = onClearTarget,
+            )
             Destination.Discovery -> DiscoveryScreen(
                 onNavigateToMaps = onNavigateToMaps,
                 viewModel = sharedPlacesViewModel,

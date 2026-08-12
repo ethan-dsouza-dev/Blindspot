@@ -13,6 +13,7 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
+import kotlin.time.Duration.Companion.milliseconds
 
 /** Thrown when a favorite is toggled before the initial favorites load has completed (or after
  * it has repeatedly failed) — the true favorited state of [placeId] is unknown, so toggling
@@ -41,7 +42,7 @@ class FavoritesRepository(
     /** @throws FavoritesNotReadyException if the initial load hasn't completed within
      * [INIT_WAIT_TIMEOUT_MS] — the caller must not assume this toggle happened. */
     suspend fun toggleFavorite(placeId: String) {
-        val ready = withTimeoutOrNull(INIT_WAIT_TIMEOUT_MS) { initialized.await() }
+        val ready = withTimeoutOrNull(INIT_WAIT_TIMEOUT_MS.milliseconds) { initialized.await() }
         if (ready == null) {
             throw FavoritesNotReadyException(placeId)
         }

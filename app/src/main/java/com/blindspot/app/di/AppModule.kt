@@ -28,9 +28,10 @@ import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import com.blindspot.app.data.remote.FavoritesApi
 import com.blindspot.app.data.repository.FavoritesRepository
+import com.blindspot.app.BuildConfig
 
-private const val BASE_URL = "https://blindspot-api-x8o7.onrender.com/"
-private const val GOOGLE_SERVER_CLIENT_ID = "566311996955-g244lgku4hoarbvkd1874ocrfcd9nnvr.apps.googleusercontent.com"
+private const val BASE_URL = BuildConfig.BASE_URL
+private const val GOOGLE_SERVER_CLIENT_ID = BuildConfig.GOOGLE_SERVER_CLIENT_ID
 
 val appModule = module {
 
