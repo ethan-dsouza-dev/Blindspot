@@ -6,8 +6,6 @@ import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -15,13 +13,11 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.MyLocation
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -32,16 +28,16 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.blindspot.app.data.model.Place
 import com.blindspot.app.data.repository.RouteRepository
 import com.blindspot.app.ui.components.PermissionGate
 import com.blindspot.app.ui.components.PlaceInfoSheet
-import com.blindspot.app.ui.components.aurora.AuroraFloating
 import com.blindspot.app.ui.components.aurora.AuroraPlaceBanner
-import com.blindspot.app.ui.components.focusEffect
-import com.blindspot.app.ui.components.navItemPress
+import com.blindspot.app.ui.components.map.MapFab
+import com.blindspot.app.ui.components.map.TrendingPinsLayer
+import com.blindspot.app.ui.discovery.PlacesViewModel
 import com.blindspot.app.ui.theme.AuroraTokens
 import com.blindspot.app.util.GeoUtils
 import kotlinx.coroutines.launch
@@ -72,9 +68,7 @@ import org.maplibre.spatialk.geojson.Point
 import org.maplibre.spatialk.geojson.Position
 import kotlin.math.ln
 import com.blindspot.app.data.repository.FavoritesRepository
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.blindspot.app.data.repository.FavoritesNotReadyException
-import kotlinx.coroutines.coroutineScope
 
 
 // Dark Matter fork keeps the map legible against the app's dark-only "Midnight Aurora" theme.
@@ -111,6 +105,7 @@ private suspend fun frameRoute(cameraState: CameraState, user: Position, target:
 @Composable
 fun MapsScreen(
     modifier: Modifier = Modifier,
+    viewModel: PlacesViewModel,
     targetPlace: Place? = null,
     onClearTarget: () -> Unit = {},
 ) {
@@ -123,19 +118,18 @@ fun MapsScreen(
         var hasCenteredOnUser by remember { mutableStateOf(false) }
         var framedTargetId by remember { mutableStateOf<String?>(null) }
         // Decoded route geometry for the current destination; null until it resolves (or when the
-        // fetch fails), in which case the map falls back to a straight guide line.
+        // fetch fails), in which case the map falls back to a straight guideline.
         var routePositions by remember { mutableStateOf<List<Position>?>(null) }
         // True while a route fetch is in flight; distinguishes "still loading" from "fetch
-        // failed", both of which leave routePositions null, so the guide line only pulses
+        // failed", both of which leave routePositions null, so the guideline only pulses
         // during an active fetch and reads as static once it has settled with a failure.
         var isFetchingRoute by remember { mutableStateOf(false) }
-        var sheetVisible by remember { mutableStateOf(false) }
+        // The trending place currently shown in the detail sheet; null when closed. Serves both
+        // the destination banner (tap sets it to targetPlace) and trending pins.
+        var sheetPlace by remember { mutableStateOf<Place?>(null) }
+        // Whether the trending-now pins are visible on the map.
+        var showTrendingPins by remember { mutableStateOf(false) }
         val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-
-        // Shared press/focus sources so navItemPress/focusEffect observe the same interactions
-        // that clickable emits (each modifier needs the exact same instance).
-        val recenterSource = remember { MutableInteractionSource() }
-        val clearSource = remember { MutableInteractionSource() }
 
         // User puck recolored to match the aurora accent (cyan dot, dark ring like the
         // destination pin) instead of the default blue.
@@ -151,7 +145,7 @@ fun MapsScreen(
             )
         }
 
-        // Pulses the straight guide line's opacity while the real route is still loading, so the
+        // Pulses the straight guideline's opacity while the real route is still loading, so the
         // static line reads as a loading state rather than a finished result.
         val routeLinePulse = rememberInfiniteTransition(label = "routeLinePulse")
         val routeLinePulseAlpha by routeLinePulse.animateFloat(
@@ -175,6 +169,10 @@ fun MapsScreen(
         // update; both the initial auto-center and the recenter button rely on this value.
         val userPosition: Position? = locationState.location?.position?.value
 
+        // Trending-now places shared with the Feed tab; loaded once by the ViewModel on the
+        // first location fix. Empty while loading or on failure.
+        val trendingPlaces by viewModel.trendingPlaces.collectAsStateWithLifecycle()
+
         // Center automatically once, as soon as the first location fix is available.
         LaunchedEffect(userPosition) {
             if (userPosition != null && !hasCenteredOnUser) {
@@ -196,7 +194,7 @@ fun MapsScreen(
 
         // Fetch and decode the route for the current destination. Keyed on the target id and the
         // first available fix so it runs once per destination (not on every tab switch). On
-        // failure routePositions stays null and the map falls back to a straight guide line.
+        // failure routePositions stays null and the map falls back to a straightguide line.
         LaunchedEffect(targetPlace?.id, userPosition != null) {
             routePositions = null
             val target = targetPlace ?: return@LaunchedEffect
@@ -227,11 +225,21 @@ fun MapsScreen(
                     gestureOptions = GestureOptions(isTiltEnabled = false),
                 ),
             ) {
+                // Trending pins: smaller cyan dots with dark rings, drawn below the destination
+                // pin so the destination stays the visual focal point. Tapping a pin opens its
+                // detail sheet.
+                if (showTrendingPins && trendingPlaces.isNotEmpty()) {
+                    TrendingPinsLayer(
+                        places = trendingPlaces,
+                        onPinClick = { sheetPlace = it },
+                    )
+                }
+
                 if (targetPlace != null) {
                     val targetPosition = Position(targetPlace.longitude, targetPlace.latitude)
 
                     // Decoded route line from the user to the destination; falls back to a
-                    // straight guide line that pulses while the route resolves (or if the fetch
+                    // straight guideline that pulses while the route resolves (or if the fetch
                     // fails, in which case it stays static).
                     if (userPosition != null) {
                         val isRouteLoading = isFetchingRoute && routePositions == null
@@ -296,35 +304,32 @@ fun MapsScreen(
                     .navigationBarsPadding()
                     .padding(bottom = 96.dp),
             ) {
-                AuroraFloating(
-                    shape = CircleShape,
+                MapFab(
+                    icon = Icons.Filled.LocationOn,
+                    contentDescription = if (showTrendingPins) {
+                        "Hide trending places"
+                    } else {
+                        "Show trending places"
+                    },
+                    onClick = { showTrendingPins = !showTrendingPins },
                     modifier = Modifier
                         .align(Alignment.End)
-                        .padding(end = 24.dp, bottom = 12.dp)
-                        .size(48.dp)
-                        .clip(CircleShape)
-                        .clickable(
-                            interactionSource = recenterSource,
-                            indication = null,
-                            enabled = userPosition != null,
-                        ) {
-                            userPosition?.let { scope.launch { centerOnUser(cameraState, it) } }
-                        }
-                        .navItemPress(interactionSource = recenterSource)
-                        .focusEffect(interactionSource = recenterSource),
-                ) {
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Icon(
-                            imageVector = Icons.Filled.MyLocation,
-                            contentDescription = "Recenter map on my location",
-                            tint = AuroraTokens.AccentCyan,
-                            modifier = Modifier.size(22.dp),
-                        )
-                    }
-                }
+                        .padding(end = 24.dp, bottom = 12.dp),
+                    enabled = userPosition != null,
+                    active = showTrendingPins,
+                    tint = AuroraTokens.TextTertiary,
+                )
+
+                MapFab(
+                    icon = Icons.Filled.MyLocation,
+                    contentDescription = "Recenter map on my location",
+                    onClick = { userPosition?.let { scope.launch { centerOnUser(cameraState, it) } } },
+                    modifier = Modifier
+                        .align(Alignment.End)
+                        .padding(end = 24.dp, bottom = 12.dp),
+                    enabled = userPosition != null,
+                    tint = AuroraTokens.AccentCyan,
+                )
 
                 if (targetPlace != null) {
                     val liveDistanceLabel = userPosition?.let { user ->
@@ -345,67 +350,50 @@ fun MapsScreen(
                         AuroraPlaceBanner(
                             place = targetPlace,
                             distanceLabel = liveDistanceLabel,
-                            onClick = { sheetVisible = true },
+                            onClick = { sheetPlace = targetPlace },
                             modifier = Modifier.weight(1f),
                         )
-                        AuroraFloating(
-                            shape = CircleShape,
-                            modifier = Modifier
-                                .padding(start = 12.dp)
-                                .size(48.dp)
-                                .clip(CircleShape)
-                                .clickable(
-                                    interactionSource = clearSource,
-                                    indication = null,
-                                    onClick = onClearTarget,
-                                )
-                                .navItemPress(interactionSource = clearSource)
-                                .focusEffect(interactionSource = clearSource),
-                        ) {
-                            Box(
-                                modifier = Modifier.fillMaxSize(),
-                                contentAlignment = Alignment.Center,
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Filled.Close,
-                                    contentDescription = "Clear destination",
-                                    tint = AuroraTokens.TextSecondary,
-                                    modifier = Modifier.size(20.dp),
-                                )
-                            }
-                        }
+                        MapFab(
+                            icon = Icons.Filled.Close,
+                            contentDescription = "Clear destination",
+                            onClick = onClearTarget,
+                            modifier = Modifier.padding(start = 12.dp),
+                            tint = AuroraTokens.TextSecondary,
+                            iconSize = 20.dp,
+                        )
                     }
                 }
             }
         }
 
-        if (sheetVisible && targetPlace != null) {
+        val sheetPlaceValue = sheetPlace
+        if (sheetPlaceValue != null) {
             val sheetDistanceLabel = userPosition?.let { user ->
                 GeoUtils.formatDistance(
                     GeoUtils.distanceMeters(
                         user.latitude, user.longitude,
-                        targetPlace.latitude, targetPlace.longitude,
+                        sheetPlaceValue.latitude, sheetPlaceValue.longitude,
                     ),
                 )
-            } ?: targetPlace.distanceMeters?.let(GeoUtils::formatDistance).orEmpty()
+            } ?: sheetPlaceValue.distanceMeters?.let(GeoUtils::formatDistance).orEmpty()
 
             PlaceInfoSheet(
-                place = targetPlace,
+                place = sheetPlaceValue,
                 distanceLabel = sheetDistanceLabel,
                 sheetState = sheetState,
-                isFavorite = targetPlace.id in favoriteIds,
+                isFavorite = targetPlace?.id in favoriteIds,
                 onToggleFavorite = {
                     scope.launch {
                         try {
-                            favoritesRepository.toggleFavorite(targetPlace.id)
+                            favoritesRepository.toggleFavorite(targetPlace?.id ?: "")
                         } catch (e: FavoritesNotReadyException) {
                             // Favorites haven't loaded yet (or kept failing) — refuse rather than guess.
                             // The heart stays as-is; user can retry once connectivity/load succeeds.
                         }
                     }
                 },
-                onDismiss = { sheetVisible = false },
-                onBack = { sheetVisible = false },
+                onDismiss = { sheetPlace = null },
+                onBack = { sheetPlace = null },
                 showBack = false,
             )
         }
