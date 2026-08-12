@@ -19,6 +19,20 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        // Load values from .env file
+        val envFile = rootProject.file(".env")
+        if (envFile.exists()) {
+            val lines = envFile.readLines()
+            for (line in lines) {
+                if (line.isNotBlank() && line.contains("=") && !line.startsWith("#")) {
+                    val parts = line.split("=", limit = 2)
+                    val key = parts[0].trim()
+                    val value = parts[1].trim().removeSurrounding("\"").removeSurrounding("'")
+                    buildConfigField("String", key, "\"$value\"")
+                }
+            }
+        }
     }
 
     buildTypes {
@@ -36,6 +50,7 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 }
 
