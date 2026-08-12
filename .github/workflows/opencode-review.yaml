@@ -1,0 +1,31 @@
+name: OpenCode Autonomous PR Review
+
+# Triggers automatically whenever a PR is created or updated
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  autonomous-review:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write # Allows OpenCode to comment on the PR lines
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Fetches full history to parse diff changes
+
+      - name: Run OpenCode Agent
+        uses: anomalyco/opencode/github@latest
+        env:
+          # Passes OpenRouter auth to the runner
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          agent: "pr-reviewer"
+          model: "openrouter/poolside/laguna-xs-2.1:free"
+          # Skip OpenCode App OIDC token exchange and use GITHUB_TOKEN directly
+          use_github_token: true
