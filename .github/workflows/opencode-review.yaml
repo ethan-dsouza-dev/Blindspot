@@ -27,6 +27,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           agent: "pr-reviewer"
-          model: "openrouter/qwen/qwen3.8-2.4t-a95b"
+          model: "openrouter/cohere/north-mini-code:free"
           # Skip OpenCode App OIDC token exchange and use GITHUB_TOKEN directly
           use_github_token: true
