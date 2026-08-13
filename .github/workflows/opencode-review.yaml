@@ -20,7 +20,7 @@ jobs:
           fetch-depth: 0 # Fetches full history to parse diff changes
 
       - name: Run OpenCode Agent
-        uses: anomalyco/opencode/github@v1
+        uses: anomalyco/opencode/github@latest
         env:
           # Passes OpenRouter auth to the runner
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
