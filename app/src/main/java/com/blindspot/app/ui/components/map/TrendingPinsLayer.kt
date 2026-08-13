@@ -1,6 +1,7 @@
 package com.blindspot.app.ui.components.map
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.unit.dp
 import com.blindspot.app.data.model.Place
 import com.blindspot.app.ui.theme.AuroraTokens
@@ -30,17 +31,19 @@ fun TrendingPinsLayer(
     places: List<Place>,
     onPinClick: (Place) -> Unit,
 ) {
+    val placeById = remember(places) { places.associateBy { it.id } }
+    val featureCollection = remember(places) {
+        FeatureCollection(
+            places.map { place ->
+                Feature(
+                    Point(Position(place.longitude, place.latitude)),
+                    JsonObject(mapOf("id" to JsonPrimitive(place.id))),
+                )
+            },
+        )
+    }
     val source = rememberGeoJsonSource(
-        data = GeoJsonData.Features(
-            FeatureCollection(
-                places.map { place ->
-                    Feature(
-                        Point(Position(place.longitude, place.latitude)),
-                        JsonObject(mapOf("id" to JsonPrimitive(place.id))),
-                    )
-                },
-            ),
-        ),
+        data = GeoJsonData.Features(featureCollection),
     )
     CircleLayer(
         id = "trending-ring",
@@ -59,7 +62,7 @@ fun TrendingPinsLayer(
                 ?.get("id")
                 ?.jsonPrimitive
                 ?.contentOrNull
-            val place = clickedId?.let { id -> places.find { it.id == id } }
+            val place = clickedId?.let { id -> placeById[id] }
             if (place != null) {
                 onPinClick(place)
                 ClickResult.Consume
