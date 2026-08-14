@@ -30,7 +30,7 @@ import com.blindspot.app.data.remote.FavoritesApi
 import com.blindspot.app.data.repository.FavoritesRepository
 import com.blindspot.app.BuildConfig
 
-private const val BASE_URL = BuildConfig.BASE_URL
+private const val BASE_URL = BuildConfig.BASE_URL_STAGING
 private const val GOOGLE_SERVER_CLIENT_ID = BuildConfig.GOOGLE_SERVER_CLIENT_ID
 
 val appModule = module {

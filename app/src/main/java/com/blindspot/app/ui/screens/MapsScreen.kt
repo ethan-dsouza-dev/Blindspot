@@ -381,14 +381,17 @@ fun MapsScreen(
                 place = sheetPlaceValue,
                 distanceLabel = sheetDistanceLabel,
                 sheetState = sheetState,
-                isFavorite = targetPlace?.id in favoriteIds,
+                isFavorite = sheetPlaceValue.id in favoriteIds,
                 onToggleFavorite = {
                     scope.launch {
                         try {
-                            favoritesRepository.toggleFavorite(targetPlace?.id ?: "")
+                            favoritesRepository.toggleFavorite(sheetPlaceValue.id)
                         } catch (e: FavoritesNotReadyException) {
-                            // Favorites haven't loaded yet (or kept failing) — refuse rather than guess.
-                            // The heart stays as-is; user can retry once connectivity/load succeeds.
+                            // Favorites haven't loaded yet — refuse rather than guess.
+                        } catch (e: Exception) {
+                            // Toggle failed (network, server error, expired token, etc.) — the heart's
+                            // optimistic state was already rolled back inside FavoritesRepository.
+                            // Nothing further to do; just don't crash.
                         }
                     }
                 },

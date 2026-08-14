@@ -157,12 +157,15 @@ fun FeedScreen(
             sheetState = sheetState,
             isFavorite = item.place.id in favoriteIds,
             onToggleFavorite = {
-                coroutineScope.launch {
+                coroutineScope.launch {   // or `scope.launch` in MapsScreen.kt specifically
                     try {
-                        favoritesRepository.toggleFavorite(item.place.id)
+                        favoritesRepository.toggleFavorite(item.place.id)   // or item.place.id / targetPlace.id, matching each file
                     } catch (e: FavoritesNotReadyException) {
-                        // Favorites haven't loaded yet (or kept failing) — refuse rather than guess.
-                        // The heart stays as-is; user can retry once connectivity/load succeeds.
+                        // Favorites haven't loaded yet — refuse rather than guess.
+                    } catch (e: Exception) {
+                        // Toggle failed (network, server error, expired token, etc.) — the heart's
+                        // optimistic state was already rolled back inside FavoritesRepository.
+                        // Nothing further to do; just don't crash.
                     }
                 }
             },
