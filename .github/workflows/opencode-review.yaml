@@ -8,6 +8,7 @@ on:
 jobs:
   autonomous-review:
     runs-on: ubuntu-latest
+    timeout-minutes: 8
     permissions:
       contents: read
       pull-requests: write # Allows OpenCode to comment on the PR lines
@@ -26,6 +27,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           agent: "pr-reviewer"
-          model: "openrouter/poolside/laguna-xs-2.1:free"
+          model: "openrouter/cohere/north-mini-code:free"
           # Skip OpenCode App OIDC token exchange and use GITHUB_TOKEN directly
           use_github_token: true
