@@ -18,6 +18,8 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.MyLocation
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -31,6 +33,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.blindspot.app.data.model.Place
+import com.blindspot.app.data.repository.FavoritesNotReadyException
+import com.blindspot.app.data.repository.FavoritesRepository
 import com.blindspot.app.data.repository.RouteRepository
 import com.blindspot.app.ui.components.PermissionGate
 import com.blindspot.app.ui.components.PlaceInfoSheet
@@ -40,6 +44,7 @@ import com.blindspot.app.ui.components.map.TrendingPinsLayer
 import com.blindspot.app.ui.discovery.PlacesViewModel
 import com.blindspot.app.ui.theme.AuroraTokens
 import com.blindspot.app.util.GeoUtils
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
 import org.maplibre.compose.camera.CameraPosition
@@ -67,10 +72,6 @@ import org.maplibre.spatialk.geojson.LineString
 import org.maplibre.spatialk.geojson.Point
 import org.maplibre.spatialk.geojson.Position
 import kotlin.math.ln
-import com.blindspot.app.data.repository.FavoritesRepository
-import com.blindspot.app.data.repository.FavoritesNotReadyException
-import kotlinx.coroutines.CancellationException
-
 
 // Dark Matter fork keeps the map legible against the app's dark-only "Midnight Aurora" theme.
 private const val OPENFREEMAP_STYLE_URL = "https://tiles.openfreemap.org/styles/dark"
@@ -116,6 +117,7 @@ fun MapsScreen(
         val routeRepository = koinInject<RouteRepository>()
         val favoritesRepository = koinInject<FavoritesRepository>()
         val favoriteIds by favoritesRepository.favoritePlaceIds.collectAsStateWithLifecycle()
+        val snackbarHostState = remember { SnackbarHostState() }
         var hasCenteredOnUser by remember { mutableStateOf(false) }
         var framedTargetId by remember { mutableStateOf<String?>(null) }
         // Decoded route geometry for the current destination; null until it resolves (or when the
@@ -216,7 +218,7 @@ fun MapsScreen(
                 baseStyle = BaseStyle.Uri(OPENFREEMAP_STYLE_URL),
                 cameraState = cameraState,
                 options = MapOptions(
-                   ornamentOptions = OrnamentOptions(
+                    ornamentOptions = OrnamentOptions(
                         isLogoEnabled = false,
                         isAttributionEnabled = true,
                         attributionAlignment = Alignment.BottomStart,
@@ -365,6 +367,13 @@ fun MapsScreen(
                     }
                 }
             }
+
+            SnackbarHost(
+                hostState = snackbarHostState,
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(bottom = 96.dp),
+            )
         }
 
         val sheetPlaceValue = sheetPlace
@@ -388,9 +397,11 @@ fun MapsScreen(
                         try {
                             favoritesRepository.toggleFavorite(sheetPlaceValue.id)
                         } catch (e: FavoritesNotReadyException) {
+                            snackbarHostState.showSnackbar("Still loading your favorites — try again in a moment.")
                         } catch (e: CancellationException) {
                             throw e
                         } catch (e: Exception) {
+                            snackbarHostState.showSnackbar("Couldn't update favorite. Check your connection.")
                         }
                     }
                 },
