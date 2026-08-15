@@ -70,6 +70,9 @@ import com.blindspot.app.data.repository.FavoritesNotReadyException
 import com.blindspot.app.data.repository.FavoritesRepository
 import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
+import kotlinx.coroutines.CancellationException
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 
 /** Radius presets used by the empty-state "Widen search" action. */
 private val WIDEN_PRESETS = listOf(500, 1_000, 2_000, 5_000)
@@ -154,20 +157,29 @@ fun DiscoveryScreen(
         val favoritesRepository: FavoritesRepository = koinInject()
         val favoriteIds by favoritesRepository.favoritePlaceIds.collectAsStateWithLifecycle()
         val coroutineScope = rememberCoroutineScope()
+        val snackbarHostState = remember { SnackbarHostState() }
 
-        DiscoveryContent(
-            state = state,
-            onBannerClick = { sheetVisible = true },
-            onRetry = viewModel::retry,
-            onRadiusChange = viewModel::setRadius,
-            onPriceChange = viewModel::setPriceLevel,
-            onRefresh = viewModel::refresh,
-            onCompassLock = { haptic.performHapticFeedback(HapticFeedbackType.VirtualKey) },
-            onWidenSearch = { viewModel.setRadius(nextWiderRadius(state.radiusMeters)) },
-            onSkipNext = viewModel::skipToNext,
-            onSkipPrevious = viewModel::skipToPrevious,
-            modifier = Modifier.fillMaxSize(),
-        )
+        Box(modifier = Modifier.fillMaxSize()) {
+            DiscoveryContent(
+                state = state,
+                onBannerClick = { sheetVisible = true },
+                onRetry = viewModel::retry,
+                onRadiusChange = viewModel::setRadius,
+                onPriceChange = viewModel::setPriceLevel,
+                onRefresh = viewModel::refresh,
+                onCompassLock = { haptic.performHapticFeedback(HapticFeedbackType.VirtualKey) },
+                onWidenSearch = { viewModel.setRadius(nextWiderRadius(state.radiusMeters)) },
+                onSkipNext = viewModel::skipToNext,
+                onSkipPrevious = viewModel::skipToPrevious,
+                modifier = Modifier.fillMaxSize(),
+            )
+
+            SnackbarHost(
+                hostState = snackbarHostState,
+                modifier = Modifier.align(Alignment.BottomCenter),
+            )
+        }
+
 
         val place = state.currentPlace
         if (sheetVisible && place != null) {
@@ -181,8 +193,11 @@ fun DiscoveryScreen(
                         try {
                             favoritesRepository.toggleFavorite(place.id)
                         } catch (e: FavoritesNotReadyException) {
-                            // Favorites haven't loaded yet (or kept failing) — refuse rather than guess.
-                            // The heart stays as-is; user can retry once connectivity/load succeeds.
+                            snackbarHostState.showSnackbar("Still loading your favorites — try again in a moment.")
+                        } catch (e: CancellationException) {
+                            snackbarHostState.showSnackbar("Couldn't update favorite. Check your connection.")
+                            throw e
+                        } catch (e: Exception) {
                         }
                     }
                 },
