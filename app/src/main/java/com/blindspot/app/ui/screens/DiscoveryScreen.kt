@@ -70,6 +70,7 @@ import com.blindspot.app.data.repository.FavoritesNotReadyException
 import com.blindspot.app.data.repository.FavoritesRepository
 import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
+import kotlinx.coroutines.CancellationException
 
 /** Radius presets used by the empty-state "Widen search" action. */
 private val WIDEN_PRESETS = listOf(500, 1_000, 2_000, 5_000)
@@ -177,15 +178,13 @@ fun DiscoveryScreen(
                 sheetState = sheetState,
                 isFavorite = place.id in favoriteIds,
                 onToggleFavorite = {
-                    coroutineScope.launch {   // or `scope.launch` in MapsScreen.kt specifically
+                    coroutineScope.launch {
                         try {
-                            favoritesRepository.toggleFavorite(place.id)   // or item.place.id / targetPlace.id, matching each file
+                            favoritesRepository.toggleFavorite(place.id)
                         } catch (e: FavoritesNotReadyException) {
-                            // Favorites haven't loaded yet — refuse rather than guess.
+                        } catch (e: CancellationException) {
+                            throw e
                         } catch (e: Exception) {
-                            // Toggle failed (network, server error, expired token, etc.) — the heart's
-                            // optimistic state was already rolled back inside FavoritesRepository.
-                            // Nothing further to do; just don't crash.
                         }
                     }
                 },

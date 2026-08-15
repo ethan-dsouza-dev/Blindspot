@@ -69,6 +69,7 @@ import org.maplibre.spatialk.geojson.Position
 import kotlin.math.ln
 import com.blindspot.app.data.repository.FavoritesRepository
 import com.blindspot.app.data.repository.FavoritesNotReadyException
+import kotlinx.coroutines.CancellationException
 
 
 // Dark Matter fork keeps the map legible against the app's dark-only "Midnight Aurora" theme.
@@ -387,11 +388,9 @@ fun MapsScreen(
                         try {
                             favoritesRepository.toggleFavorite(sheetPlaceValue.id)
                         } catch (e: FavoritesNotReadyException) {
-                            // Favorites haven't loaded yet — refuse rather than guess.
+                        } catch (e: CancellationException) {
+                            throw e
                         } catch (e: Exception) {
-                            // Toggle failed (network, server error, expired token, etc.) — the heart's
-                            // optimistic state was already rolled back inside FavoritesRepository.
-                            // Nothing further to do; just don't crash.
                         }
                     }
                 },

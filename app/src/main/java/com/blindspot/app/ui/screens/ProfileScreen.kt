@@ -50,6 +50,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.blindspot.app.data.repository.FavoritesNotReadyException
 import com.blindspot.app.data.repository.FavoritesRepository
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
 
@@ -246,8 +247,9 @@ private fun ProfileScreenContent(
                     try {
                         favoritesRepository.toggleFavorite(place.id)
                     } catch (e: FavoritesNotReadyException) {
-                        // Favorites haven't loaded yet (or kept failing) — refuse rather than guess.
-                        // The heart stays as-is; user can retry once connectivity/load succeeds.
+                    } catch (e: CancellationException) {
+                        throw e
+                    } catch (e: Exception) {
                     }
                 }
             },

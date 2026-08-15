@@ -38,6 +38,7 @@ import com.blindspot.app.data.repository.FavoritesRepository
 import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
 import com.blindspot.app.data.repository.FavoritesNotReadyException
+import kotlinx.coroutines.CancellationException
 
 /**
  * Feed tab: a pinned header (title + category filter chips) above a scrollable Trending Now rail
@@ -157,15 +158,13 @@ fun FeedScreen(
             sheetState = sheetState,
             isFavorite = item.place.id in favoriteIds,
             onToggleFavorite = {
-                coroutineScope.launch {   // or `scope.launch` in MapsScreen.kt specifically
+                coroutineScope.launch {
                     try {
-                        favoritesRepository.toggleFavorite(item.place.id)   // or item.place.id / targetPlace.id, matching each file
+                        favoritesRepository.toggleFavorite(item.place.id)
                     } catch (e: FavoritesNotReadyException) {
-                        // Favorites haven't loaded yet — refuse rather than guess.
+                    } catch (e: CancellationException) {
+                        throw e
                     } catch (e: Exception) {
-                        // Toggle failed (network, server error, expired token, etc.) — the heart's
-                        // optimistic state was already rolled back inside FavoritesRepository.
-                        // Nothing further to do; just don't crash.
                     }
                 }
             },
