@@ -14,11 +14,16 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.delay
+import com.blindspot.app.data.repository.UnitsRepository
+import com.blindspot.app.data.repository.ThemeRepository
+import com.blindspot.app.ui.theme.AppTheme
 
 class ProfileViewModel(
     private val tokenStore: TokenStore,
     private val favoritesRepository: FavoritesRepository,
     private val placeRepository: PlaceRepository,
+    private val unitsRepository: UnitsRepository,
+    private val themeRepository: ThemeRepository,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ProfileUiState())
@@ -27,6 +32,28 @@ class ProfileViewModel(
     init {
         loadProfile()
         observeFavorites()
+        observeUnits()
+        observeTheme()
+    }
+
+    private fun observeTheme() {
+        viewModelScope.launch {
+            themeRepository.theme.collect { value ->
+                _uiState.update { it.copy(currentTheme = value) }
+            }
+        }
+    }
+
+    fun onThemeChange(theme: AppTheme) {
+        themeRepository.setTheme(theme)
+    }
+
+    private fun observeUnits() {
+        viewModelScope.launch {
+            unitsRepository.useKilometers.collect { value ->
+                _uiState.update { it.copy(unitsInKilometers = value) }
+            }
+        }
     }
 
     fun loadProfile() {
@@ -79,8 +106,7 @@ class ProfileViewModel(
     }
 
     fun onToggleUnits(useKilometers: Boolean) {
-        _uiState.update { it.copy(unitsInKilometers = useKilometers) }
-        // TODO: persist to DataStore/SharedPrefs
+        unitsRepository.setUseKilometers(useKilometers)
     }
 
     fun onToggleNotifications(enabled: Boolean) {

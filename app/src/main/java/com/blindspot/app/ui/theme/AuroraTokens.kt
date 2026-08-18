@@ -1,59 +1,60 @@
 package com.blindspot.app.ui.theme
 
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.Color
 
 /**
- * "Midnight Aurora" design tokens — single source of truth for color.
- * Deep slate base, cyan accent used sparingly (needle, active states, CTAs).
- * Solid elevated surfaces with tinted shadows (no translucent glass).
+ * Design tokens — single source of truth for color. Every property here is backed by
+ * [currentPalette], a Compose [mutableStateOf]. Because Compose's snapshot system tracks state
+ * reads regardless of whether they happen through a plain property getter, every existing
+ * `AuroraTokens.X` reference across the app automatically recomposes when [setPalette] changes
+ * the active theme — no call site needs to change.
  */
 object AuroraTokens {
 
-    // Base backgrounds (60%)
-    val BaseDeep = Color(0xFF0B0F14)
-    val BaseSlate = Color(0xFF11161D)
+    private var currentPalette by mutableStateOf(AuroraPalette)
 
-    // Elevated surfaces
-    val SurfaceElevated = Color(0xFF1A2129)
-    val SurfaceBorder = Color(0xFF2A323C)
+    fun setPalette(palette: ColorPalette) {
+        currentPalette = palette
+    }
 
-    // Accent — used sparingly (10%): needle, active states, primary CTAs
-    val AccentCyan = Color(0xFF22D3EE)
-    val AccentTeal = Color(0xFF2DD4BF)
+    val BaseDeep: Color get() = currentPalette.baseDeep
+    val BaseSlate: Color get() = currentPalette.baseSlate
 
-    // Accent variations for hierarchy
-    val AccentCyanSubtle = AccentCyan.copy(alpha = 0.05f)   // Secondary button bg, card highlights
-    val AccentCyanGlow = AccentCyan.copy(alpha = 0.15f)     // Lock-on glow, focus rings
-    val AccentCyanPress = AccentCyan.copy(alpha = 0.20f)    // Press states
+    val SurfaceElevated: Color get() = currentPalette.surfaceElevated
+    val SurfaceBorder: Color get() = currentPalette.surfaceBorder
 
-    // Content on accent-filled surfaces
-    val OnAccent = BaseDeep
+    val AccentCyan: Color get() = currentPalette.accentCyan
+    val AccentTeal: Color get() = currentPalette.accentTeal
 
-    // Text hierarchy (30%) — opacity-based on TextPrimary
-    val TextPrimary = Color(0xFFEDF1F5)      // 100% — headings, primary content
-    val TextSecondary = TextPrimary.copy(alpha = 0.70f)  // 70% — body, metadata
-    val TextTertiary = TextPrimary.copy(alpha = 0.50f)   // 50% — disabled, hints, timestamps
+    val AccentCyanSubtle: Color get() = AccentCyan.copy(alpha = 0.05f)
+    val AccentCyanGlow: Color get() = AccentCyan.copy(alpha = 0.15f)
+    val AccentCyanPress: Color get() = AccentCyan.copy(alpha = 0.20f)
 
-    // Semantic statuses
-    val Positive = Color(0xFF4ADE80)
-    val Negative = Color(0xFFF87171)
+    val OnAccent: Color get() = BaseDeep
 
-    // Ratings
-    val RatingStar = Color(0xFFF5C044)
+    val TextPrimary: Color get() = currentPalette.textPrimaryBase
+    val TextSecondary: Color get() = TextPrimary.copy(alpha = 0.70f)
+    val TextTertiary: Color get() = TextPrimary.copy(alpha = 0.50f)
 
-    // Shadow system — tinted to background, never pure gray/black
-    val ShadowTint = BaseDeep.copy(alpha = 0.40f)
-    val ShadowLevel1 = ShadowTint.copy(alpha = 0.20f)  // 0 1px 3px
-    val ShadowLevel2 = ShadowTint.copy(alpha = 0.25f)  // 0 4px 12px
-    val ShadowLevel3 = ShadowTint.copy(alpha = 0.30f)  // 0 8px 24px
+    val Positive: Color get() = currentPalette.positive
+    val Negative: Color get() = currentPalette.negative
 
-    // Compass-specific
-    val CompassDialFill = Color(0xFF141A21)
-    val CompassDialStroke = Color(0xFF2A323C)
-    val CompassDialInnerStroke = Color(0xFF212932)
-    val CompassTickMajor = Color(0xFF5A6675)
-    val CompassTickMinor = Color(0xFF2E3742)
-    val CompassNeedleTail = Color(0x40EDF1F5)
-    val CompassHub = Color(0xFFEDF1F5)
-    val CompassHubInner = AccentCyan
+    val RatingStar: Color get() = currentPalette.ratingStar
+
+    val ShadowTint: Color get() = BaseDeep.copy(alpha = 0.40f)
+    val ShadowLevel1: Color get() = ShadowTint.copy(alpha = 0.20f)
+    val ShadowLevel2: Color get() = ShadowTint.copy(alpha = 0.25f)
+    val ShadowLevel3: Color get() = ShadowTint.copy(alpha = 0.30f)
+
+    val CompassDialFill: Color get() = currentPalette.compassDialFill
+    val CompassDialStroke: Color get() = currentPalette.compassDialStroke
+    val CompassDialInnerStroke: Color get() = currentPalette.compassDialInnerStroke
+    val CompassTickMajor: Color get() = currentPalette.compassTickMajor
+    val CompassTickMinor: Color get() = currentPalette.compassTickMinor
+    val CompassNeedleTail: Color get() = currentPalette.compassNeedleTail
+    val CompassHub: Color get() = currentPalette.compassHub
+    val CompassHubInner: Color get() = AccentCyan
 }

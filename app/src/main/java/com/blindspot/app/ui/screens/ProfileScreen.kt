@@ -50,11 +50,15 @@ import com.blindspot.app.ui.components.aurora.AuroraCard
 import com.blindspot.app.ui.feed.TrendingPlaceItem
 import com.blindspot.app.ui.profile.ProfileUiState
 import com.blindspot.app.ui.profile.ProfileViewModel
+import com.blindspot.app.ui.theme.AppTheme
 import com.blindspot.app.ui.theme.AuroraTokens
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
 import org.koin.androidx.compose.koinViewModel
 import org.koin.compose.koinInject
+import androidx.compose.foundation.border
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.graphics.Color
 
 private const val SAVED_PLACE_LABEL = "Saved"
 
@@ -69,6 +73,7 @@ fun ProfileScreen(
         uiState = uiState,
         onToggleUnits = viewModel::onToggleUnits,
         onToggleNotifications = viewModel::onToggleNotifications,
+        onThemeChange = viewModel::onThemeChange,
         onSignOut = onSignOut,
         onRetry = viewModel::loadProfile,
     )
@@ -80,6 +85,7 @@ private fun ProfileScreenContent(
     uiState: ProfileUiState,
     onToggleUnits: (Boolean) -> Unit,
     onToggleNotifications: (Boolean) -> Unit,
+    onThemeChange: (AppTheme) -> Unit,
     onSignOut: () -> Unit,
     onRetry: () -> Unit,
 ) {
@@ -184,6 +190,57 @@ private fun ProfileScreenContent(
                                         style = MaterialTheme.typography.bodyMedium,
                                         color = AuroraTokens.TextSecondary,
                                     )
+                                }
+                            }
+                        }
+                    }
+
+                    item {
+                        AuroraCard {
+                            Column(modifier = Modifier.padding(16.dp)) {
+                                Text(
+                                    text = "Theme",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = AuroraTokens.TextPrimary,
+                                    modifier = Modifier.padding(bottom = 12.dp),
+                                )
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                ) {
+                                    AppTheme.entries.forEach { theme ->
+                                        val selected = theme == uiState.currentTheme
+                                        Button(
+                                            onClick = { onThemeChange(theme) },
+                                            modifier = Modifier
+                                                .weight(1f)
+                                                .then(
+                                                    if (!selected) {
+                                                        Modifier.border(
+                                                            width = 1.dp,
+                                                            color = AuroraTokens.SurfaceBorder,
+                                                            shape = RoundedCornerShape(50),
+                                                        )
+                                                    } else {
+                                                        Modifier
+                                                    },
+                                                ),
+                                            colors = ButtonDefaults.buttonColors(
+                                                containerColor = if (selected) {
+                                                    AuroraTokens.AccentCyan
+                                                } else {
+                                                    Color.Transparent
+                                                },
+                                                contentColor = if (selected) {
+                                                    AuroraTokens.OnAccent
+                                                } else {
+                                                    AuroraTokens.TextSecondary
+                                                },
+                                            ),
+                                        ) {
+                                            Text(theme.name.lowercase().replaceFirstChar { it.uppercase() })
+                                        }
+                                    }
                                 }
                             }
                         }

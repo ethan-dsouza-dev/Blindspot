@@ -42,6 +42,7 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
 import org.koin.androidx.compose.koinViewModel
 import org.koin.compose.koinInject
+import com.blindspot.app.data.repository.UnitsRepository
 
 /**
  * Feed tab: a pinned header (title + category filter chips) above a scrollable Trending Now rail
@@ -67,21 +68,23 @@ fun FeedScreen(
     val favoriteIds by favoritesRepository.favoritePlaceIds.collectAsStateWithLifecycle()
     val coroutineScope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
+    val unitsRepository: UnitsRepository = koinInject()
+    val useKilometers by unitsRepository.useKilometers.collectAsStateWithLifecycle()
 
-    val nearbyItems = remember(places) {
+    val nearbyItems = remember(places, useKilometers) {
         places.map { place ->
             TrendingPlaceItem(
                 place = place,
-                distanceLabel = place.distanceMeters?.let(GeoUtils::formatDistance) ?: "",
+                distanceLabel = place.distanceMeters?.let { GeoUtils.formatDistance(it, useKilometers) } ?: "",
             )
         }.sortedBy { it.place.distanceMeters ?: Double.MAX_VALUE }
     }
 
-    val trendingItems = remember(trendingPlaces) {
+    val trendingItems = remember(trendingPlaces, useKilometers) {
         trendingPlaces.map { place ->
             TrendingPlaceItem(
                 place = place,
-                distanceLabel = place.distanceMeters?.let(GeoUtils::formatDistance) ?: "",
+                distanceLabel = place.distanceMeters?.let { GeoUtils.formatDistance(it, useKilometers) } ?: "",
             )
         }
     }

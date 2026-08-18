@@ -5,34 +5,36 @@ import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
 
 /**
- * Single dark "Midnight Aurora" scheme built from [AuroraTokens].
- * Dark-only by design (night-out discovery product); dynamic color disabled.
+ * Dark color scheme built from the currently-active [AuroraTokens] palette. Computed inside
+ * this composable (not as a top-level val) so it re-reads the tokens — and therefore reacts to
+ * [AuroraTokens.setPalette] — on every recomposition. Dark-only by design (night-out discovery
+ * product); dynamic color disabled.
  */
-private val AuroraColorScheme = darkColorScheme(
-    primary = AuroraTokens.AccentCyan,
-    onPrimary = AuroraTokens.OnAccent,
-    secondary = AuroraTokens.AccentTeal,
-    onSecondary = AuroraTokens.OnAccent,
-    tertiary = AuroraTokens.AccentTeal,
-    onTertiary = AuroraTokens.OnAccent,
-    background = AuroraTokens.BaseDeep,
-    onBackground = AuroraTokens.TextPrimary,
-    surface = AuroraTokens.BaseSlate,
-    onSurface = AuroraTokens.TextPrimary,
-    surfaceVariant = AuroraTokens.SurfaceElevated,
-    onSurfaceVariant = AuroraTokens.TextSecondary,
-    outline = AuroraTokens.SurfaceBorder,
-    outlineVariant = AuroraTokens.SurfaceBorder,
-    error = AuroraTokens.Negative,
-    onError = AuroraTokens.OnAccent,
-)
-
 @Composable
 fun BlindspotTheme(
     content: @Composable () -> Unit,
 ) {
+    val colorScheme = darkColorScheme(
+        primary = AuroraTokens.AccentCyan,
+        onPrimary = AuroraTokens.OnAccent,
+        secondary = AuroraTokens.AccentTeal,
+        onSecondary = AuroraTokens.OnAccent,
+        tertiary = AuroraTokens.AccentTeal,
+        onTertiary = AuroraTokens.OnAccent,
+        background = AuroraTokens.BaseDeep,
+        onBackground = AuroraTokens.TextPrimary,
+        surface = AuroraTokens.BaseSlate,
+        onSurface = AuroraTokens.TextPrimary,
+        surfaceVariant = AuroraTokens.SurfaceElevated,
+        onSurfaceVariant = AuroraTokens.TextSecondary,
+        outline = AuroraTokens.SurfaceBorder,
+        outlineVariant = AuroraTokens.SurfaceBorder,
+        error = AuroraTokens.Negative,
+        onError = AuroraTokens.OnAccent,
+    )
+
     MaterialTheme(
-        colorScheme = AuroraColorScheme,
+        colorScheme = colorScheme,
         typography = Typography,
         content = content,
     )
