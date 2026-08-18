@@ -36,6 +36,7 @@ import com.blindspot.app.data.model.Place
 import com.blindspot.app.data.repository.FavoritesNotReadyException
 import com.blindspot.app.data.repository.FavoritesRepository
 import com.blindspot.app.data.repository.RouteRepository
+import com.blindspot.app.data.repository.UnitsRepository
 import com.blindspot.app.ui.components.PermissionGate
 import com.blindspot.app.ui.components.PlaceInfoSheet
 import com.blindspot.app.ui.components.aurora.AuroraPlaceBanner
@@ -117,6 +118,8 @@ fun MapsScreen(
         val routeRepository = koinInject<RouteRepository>()
         val favoritesRepository = koinInject<FavoritesRepository>()
         val favoriteIds by favoritesRepository.favoritePlaceIds.collectAsStateWithLifecycle()
+        val unitsRepository = koinInject<UnitsRepository>()
+        val useKilometers by unitsRepository.useKilometers.collectAsStateWithLifecycle()
         val snackbarHostState = remember { SnackbarHostState() }
         var hasCenteredOnUser by remember { mutableStateOf(false) }
         var framedTargetId by remember { mutableStateOf<String?>(null) }
@@ -341,8 +344,9 @@ fun MapsScreen(
                                 user.latitude, user.longitude,
                                 targetPlace.latitude, targetPlace.longitude,
                             ),
+                            useKilometers,
                         )
-                    } ?: targetPlace.distanceMeters?.let(GeoUtils::formatDistance).orEmpty()
+                    } ?: targetPlace.distanceMeters?.let { GeoUtils.formatDistance(it, useKilometers) }.orEmpty()
 
                     Row(
                         modifier = Modifier
@@ -384,8 +388,9 @@ fun MapsScreen(
                         user.latitude, user.longitude,
                         sheetPlaceValue.latitude, sheetPlaceValue.longitude,
                     ),
+                    useKilometers,
                 )
-            } ?: sheetPlaceValue.distanceMeters?.let(GeoUtils::formatDistance).orEmpty()
+            } ?: sheetPlaceValue.distanceMeters?.let { GeoUtils.formatDistance(it, useKilometers) }.orEmpty()
 
             PlaceInfoSheet(
                 place = sheetPlaceValue,

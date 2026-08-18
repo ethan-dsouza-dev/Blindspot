@@ -29,6 +29,8 @@ import retrofit2.converter.gson.GsonConverterFactory
 import com.blindspot.app.data.remote.FavoritesApi
 import com.blindspot.app.data.repository.FavoritesRepository
 import com.blindspot.app.BuildConfig
+import com.blindspot.app.data.repository.UnitsRepository
+import com.blindspot.app.data.repository.ThemeRepository
 
 private const val BASE_URL = BuildConfig.BASE_URL
 private const val GOOGLE_SERVER_CLIENT_ID = BuildConfig.GOOGLE_SERVER_CLIENT_ID
@@ -91,10 +93,13 @@ val appModule = module {
     single<PlaceRepository> { NetworkPlaceRepository(get()) }
     single<RouteRepository> { NetworkRouteRepository(get()) }
 
+    single { UnitsRepository(androidContext()) }
+    single { ThemeRepository(androidContext()) }
+
     single { LocationProvider(androidContext()) }
     single { CompassSensorManager(androidContext()) }
 
     viewModel { AuthViewModel(get(), GOOGLE_SERVER_CLIENT_ID) }
-    viewModel { PlacesViewModel(get(), get(), get()) }
-    viewModel { ProfileViewModel(get(), get(), get()) }
+    viewModel { PlacesViewModel(get(), get(), get(), get()) }
+    viewModel { ProfileViewModel(get(), get(), get(), get(), get()) }
 }

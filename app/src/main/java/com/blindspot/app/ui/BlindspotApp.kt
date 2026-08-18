@@ -35,6 +35,11 @@ import com.blindspot.app.data.repository.FavoritesRepository
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlin.coroutines.cancellation.CancellationException
+import com.blindspot.app.data.repository.ThemeRepository
+import com.blindspot.app.ui.theme.AppTheme
+import com.blindspot.app.ui.theme.AuroraTokens
+import com.blindspot.app.ui.theme.AuroraPalette
+import com.blindspot.app.ui.theme.DuskPalette
 
 @Composable
 fun BlindspotApp() {
@@ -43,6 +48,15 @@ fun BlindspotApp() {
     val isAuthenticated by tokenStore.isAuthenticatedFlow.collectAsStateWithLifecycle()
     val authViewModel: AuthViewModel = koinViewModel()
     val favoritesRepository: FavoritesRepository = koinInject()
+    val themeRepository: ThemeRepository = koinInject()
+    val currentTheme by themeRepository.theme.collectAsStateWithLifecycle()
+
+    // Applies the persisted theme choice to AuroraTokens on launch and whenever it changes
+    // (e.g. toggled in Profile), so every screen reading AuroraTokens.X recomposes with the
+    // new palette without needing any changes at those call sites.
+    LaunchedEffect(currentTheme) {
+        AuroraTokens.setPalette(if (currentTheme == AppTheme.DUSK) DuskPalette else AuroraPalette)
+    }
 
     LaunchedEffect(isAuthenticated) {
         val currentRoute = navController.currentBackStackEntry?.destination?.route
