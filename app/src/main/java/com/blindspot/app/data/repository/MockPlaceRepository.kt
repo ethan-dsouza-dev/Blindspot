@@ -57,6 +57,7 @@ class MockPlaceRepository : PlaceRepository {
                 longitude = 0.0,
                 imageUrl = offset.imageUrl,
                 rating = offset.rating,
+                reviewCount = offset.ratingsTotal,
                 priceLevel = offset.priceLevel,
             )
         }.filter { it.id in idSet }
@@ -77,6 +78,7 @@ class MockPlaceRepository : PlaceRepository {
                 longitude = longitude + offset.lngOffset,
                 imageUrl = offset.imageUrl,
                 rating = offset.rating,
+                reviewCount = offset.ratingsTotal,
                 priceLevel = offset.priceLevel,
             )
         }.filter { place ->
@@ -91,6 +93,7 @@ class MockPlaceRepository : PlaceRepository {
         val lngOffset: Double,
         val rating: Double,
         val priceLevel: Int,
+        val ratingsTotal: Int,
         val imageUrl: List<String>,
     )
 
@@ -101,7 +104,7 @@ class MockPlaceRepository : PlaceRepository {
                 name = "The Hidden Flask",
                 description = "Cozy speakeasy with craft cocktails and dim, moody lighting.",
                 category = "speakeasy",
-                latOffset = 0.0018, lngOffset = 0.0009, rating = 4.6, priceLevel = 3,
+                latOffset = 0.0018, lngOffset = 0.0009, rating = 4.6, priceLevel = 3, ratingsTotal = 320,
                 imageUrl = listOf(
                     "https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?w=800",
                     "https://images.unsplash.com/photo-1470337458703-46ad1756a187?w=800",
@@ -112,7 +115,7 @@ class MockPlaceRepository : PlaceRepository {
                 name = "Neon Alley",
                 description = "Buzzing rooftop bar with skyline views and house DJs on weekends.",
                 category = "bar",
-                latOffset = -0.0022, lngOffset = 0.0015, rating = 4.3, priceLevel = 2,
+                latOffset = -0.0022, lngOffset = 0.0015, rating = 4.3, priceLevel = 2, ratingsTotal = 1180,
                 imageUrl = listOf(
                     "https://images.unsplash.com/photo-1566417713940-fe7c737a9ef2?w=800",
                     "https://images.unsplash.com/photo-1485872299829-c673f5194813?w=800",
@@ -122,7 +125,7 @@ class MockPlaceRepository : PlaceRepository {
                 name = "Cellar 9",
                 description = "Underground wine bar pouring natural wines and small plates.",
                 category = "wine_bar",
-                latOffset = 0.0009, lngOffset = -0.0026, rating = 4.8, priceLevel = 3,
+                latOffset = 0.0009, lngOffset = -0.0026, rating = 4.8, priceLevel = 3, ratingsTotal = 76,
                 imageUrl = listOf(
                     "https://images.unsplash.com/photo-1510812431401-41d2bd2722f3?w=800",
                 ),
@@ -131,7 +134,7 @@ class MockPlaceRepository : PlaceRepository {
                 name = "The Tap Room",
                 description = "Laid-back pub with 24 rotating local craft beers on tap.",
                 category = "pub",
-                latOffset = -0.0014, lngOffset = -0.0011, rating = 4.1, priceLevel = 1,
+                latOffset = -0.0014, lngOffset = -0.0011, rating = 4.1, priceLevel = 1, ratingsTotal = 640,
                 imageUrl = listOf(
                     "https://images.unsplash.com/photo-1436076863939-06870fe779c2?w=800",
                     "https://images.unsplash.com/photo-1518176258769-f227c798150e?w=800",
@@ -141,7 +144,7 @@ class MockPlaceRepository : PlaceRepository {
                 name = "Midnight Lounge",
                 description = "Late-night jazz lounge serving classic cocktails until 3am.",
                 category = "lounge",
-                latOffset = 0.0031, lngOffset = 0.0024, rating = 4.5, priceLevel = 2,
+                latOffset = 0.0031, lngOffset = 0.0024, rating = 4.5, priceLevel = 2, ratingsTotal = 2100,
                 imageUrl = listOf(
                     "https://images.unsplash.com/photo-1572116469696-31de0f17cc34?w=800",
                 ),
