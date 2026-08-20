@@ -37,3 +37,12 @@ val Place.priceLabel: String?
 /** Rating formatted with a single decimal, e.g. "4.5". */
 val Place.ratingLabel: String?
     get() = rating?.let { String.format(Locale.US, "%.1f", it) }
+
+/** Total number of reviews, compacted for display, e.g. "76", "1.2k", "2.1k". */
+val Place.reviewCountLabel: String?
+    get() = reviewCount?.let { count ->
+        when {
+            count >= 1000 -> String.format(Locale.US, "%.1fk", count / 1000.0)
+            else -> count.toString()
+        }
+    }

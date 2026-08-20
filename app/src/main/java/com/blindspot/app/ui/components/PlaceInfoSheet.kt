@@ -61,6 +61,7 @@ import com.blindspot.app.ui.theme.AuroraTokens
 import com.blindspot.app.util.categoryLabel
 import com.blindspot.app.util.priceLabel
 import com.blindspot.app.util.ratingLabel
+import com.blindspot.app.util.reviewCountLabel
 
 /** Roughly how many characters a 3-line body description holds at this width; beyond this the
  * description collapses behind a "Read more" toggle. */
@@ -350,7 +351,10 @@ private fun MetadataChips(
     ) {
         place.ratingLabel?.let { rating ->
             Chip(
-                text = rating,
+                text = buildString {
+                    append(rating)
+                    place.reviewCountLabel?.let { append(" ($it)") }
+                },
                 textColor = AuroraTokens.TextPrimary,
                 backgroundColor = AuroraTokens.SurfaceElevated,
                 icon = {
