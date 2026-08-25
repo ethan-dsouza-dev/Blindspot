@@ -7,6 +7,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -63,20 +64,8 @@ import com.blindspot.app.util.priceLabel
 import com.blindspot.app.util.ratingLabel
 import com.blindspot.app.util.reviewCountLabel
 
-/** Roughly how many characters a 3-line body description holds at this width; beyond this the
- * description collapses behind a "Read more" toggle. */
 private const val DESCRIPTION_FOLD_CHARS = 130
 
-/**
- * The single shared venue detail sheet, used from every entry point (Discover, Feed, Map) so
- * the venue presentation is identical across the app.
- *
- * The hero is a swipeable photo pager with a gradient scrim, page indicators, and a favorite
- * toggle in the top-right corner; the body (chips + description) scrolls while the CTA row stays
- * pinned at the bottom. CTA hierarchy: "Take me there" ([onViewOnMap]) is the primary filled
- * action; "Next" ([onSkip], optional) is the tonal secondary; back is a circular tonal icon
- * button.
- */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PlaceInfoSheet(
@@ -97,41 +86,24 @@ fun PlaceInfoSheet(
         sheetState = sheetState,
         containerColor = AuroraTokens.BaseSlate,
         modifier = modifier,
-        dragHandle = {
-            Box(
-                modifier = Modifier
-                    .padding(top = 12.dp, bottom = 4.dp)
-                    .size(width = 40.dp, height = 4.dp)
-                    .clip(RoundedCornerShape(2.dp))
-                    .background(AuroraTokens.SurfaceBorder),
-            )
-        },
+        dragHandle = null
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .navigationBarsPadding(),
         ) {
-            Column(
+            Box(
                 modifier = Modifier
+                    .fillMaxWidth()
                     .weight(1f, fill = false)
                     .verticalScroll(rememberScrollState()),
             ) {
-                // Hero image with gradient overlay, title, and favorite toggle.
-                HeroImage(
-                    photos = place.imageUrl.orEmpty().filter { it.isNotBlank() },
-                    contentDescription = place.name,
-                    placeName = place.name,
-                    distanceLabel = distanceLabel,
-                    isFavorite = isFavorite,
-                    onToggleFavorite = onToggleFavorite,
-                    modifier = Modifier.fillMaxWidth(),
-                )
-
+                // Scrollable content with top padding for HeroImage
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(start = 24.dp, end = 24.dp),
+                        .padding(top = 240.dp, start = 24.dp, end = 24.dp),
                 ) {
                     MetadataChips(
                         place = place,
@@ -143,6 +115,18 @@ fun PlaceInfoSheet(
                         modifier = Modifier.padding(top = 16.dp),
                     )
                 }
+
+                // Hero image positioned at top, overlapping drag handle area
+                HeroImage(
+                    photos = place.imageUrl.orEmpty().filter { it.isNotBlank() },
+                    contentDescription = place.name,
+                    placeName = place.name,
+                    distanceLabel = distanceLabel,
+                    isFavorite = isFavorite,
+                    onToggleFavorite = onToggleFavorite,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                )
             }
 
             val hasActions = showBack || onSkip != null || onViewOnMap != null
@@ -234,6 +218,8 @@ private fun HeroImage(
             }
         }
 
+        DragHandle()
+
         Box(
             modifier = Modifier
                 .fillMaxSize()
@@ -281,8 +267,6 @@ private fun HeroImage(
     }
 }
 
-/** Circular scrim button that toggles favorite status: outline heart when not favorited,
- * filled accent heart when favorited. */
 @Composable
 private fun FavoriteToggleButton(
     isFavorite: Boolean,
@@ -306,7 +290,6 @@ private fun FavoriteToggleButton(
     }
 }
 
-/** Body description, collapsed to 3 lines with a "Read more"/"Show less" toggle. */
 @Composable
 private fun DescriptionSection(
     text: String,
@@ -338,7 +321,6 @@ private fun DescriptionSection(
     }
 }
 
-/** Metadata as chips: rating, price, category (elevated). Distance is shown in the hero scrim. */
 @Composable
 private fun MetadataChips(
     place: Place,
@@ -413,7 +395,6 @@ private fun Chip(
     }
 }
 
-/** Filled accent CTA — the one and only primary button style. */
 @Composable
 private fun PrimaryButton(
     label: String,
@@ -446,7 +427,6 @@ private fun PrimaryButton(
     }
 }
 
-/** Tonal secondary button: elevated surface with an accent hairline border. */
 @Composable
 private fun SecondaryButton(
     label: String,
@@ -471,7 +451,6 @@ private fun SecondaryButton(
     }
 }
 
-/** Circular tonal icon button for back action. */
 @Composable
 private fun CircleIconButton(
     icon: ImageVector,
@@ -494,4 +473,16 @@ private fun CircleIconButton(
             modifier = Modifier.size(20.dp),
         )
     }
+}
+
+@Composable
+private fun BoxScope.DragHandle() {
+    Box(
+        modifier = Modifier
+            .align(Alignment.TopCenter)
+            .padding(top = 12.dp)
+            .size(width = 40.dp, height = 4.dp)
+            .clip(RoundedCornerShape(2.dp))
+            .background(AuroraTokens.TextPrimary.copy(alpha = 0.6f)),
+    )
 }
