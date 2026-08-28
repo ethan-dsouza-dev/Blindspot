@@ -1,6 +1,6 @@
 # Blindspot
 
-Blindspot is an Android app that points you toward nearby places like a compass. Instead of
+Blindspot is a mobile app that uses a compass to point you toward nearby places of interest. Instead of
 staring at a map, you hold up your phone and a needle spins to point at the closest spot — a bar,
 café, or whatever category you're exploring. Tap the banner for details, or skip to the next place.
 
