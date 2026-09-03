@@ -8,8 +8,6 @@ import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -29,7 +27,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -37,28 +34,20 @@ import com.blindspot.app.data.repository.PlaceRepository
 import com.blindspot.app.ui.components.aurora.AuroraFloating
 import com.blindspot.app.ui.theme.AuroraTokens
 
-/**
- * "Midnight Aurora" single-select price-point filter. A collapsed pill shows the current
- * selection ("Any" or $..$$$$); tapping it reveals the full option list with a smooth
- * expand/fade animation and a rotating chevron. Selecting an option calls [onPriceChange].
- *
- * @param priceLevel current price point, 1..4, or null for "Any".
- * @param onPriceChange called with the newly selected price level, or null for "Any".
- */
 @Composable
 fun PriceFilterDropdown(
     priceLevel: Int?,
     onPriceChange: (Int?) -> Unit,
-    modifier: Modifier = Modifier,
+    modifier: Modifier = Modifier
 ) {
     var expanded by remember { mutableStateOf(false) }
     val chevronRotation by animateFloatAsState(
         targetValue = if (expanded) 180f else 0f,
         animationSpec = spring(
             dampingRatio = Spring.DampingRatioMediumBouncy,
-            stiffness = Spring.StiffnessLow,
+            stiffness = Spring.StiffnessLow
         ),
-        label = "priceChevronRotation",
+        label = "priceChevronRotation"
     )
     val options = remember {
         listOf<Int?>(null) + (PlaceRepository.MIN_PRICE_LEVEL..PlaceRepository.MAX_PRICE_LEVEL).toList()
@@ -66,28 +55,25 @@ fun PriceFilterDropdown(
 
     Column(modifier = modifier.fillMaxWidth()) {
         Row(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable { expanded = !expanded }
+                .padding(vertical = 12.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
+            verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
                 text = "Price",
                 style = MaterialTheme.typography.bodyMedium,
-                color = AuroraTokens.TextSecondary,
+                color = AuroraTokens.TextSecondary
             )
             Row(
-                modifier = Modifier
-                    .clip(MaterialTheme.shapes.medium)
-                    .border(1.dp, AuroraTokens.SurfaceBorder, MaterialTheme.shapes.medium)
-                    .background(AuroraTokens.SurfaceElevated)
-                    .clickable { expanded = !expanded }
-                    .padding(horizontal = 16.dp, vertical = 12.dp),
-                verticalAlignment = Alignment.CenterVertically,
+                verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
                     text = priceLabel(priceLevel),
                     style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
-                    color = AuroraTokens.AccentCyan,
+                    color = AuroraTokens.AccentCyan
                 )
                 Icon(
                     imageVector = Icons.Filled.KeyboardArrowDown,
@@ -95,7 +81,7 @@ fun PriceFilterDropdown(
                     tint = AuroraTokens.TextSecondary,
                     modifier = Modifier
                         .padding(start = 4.dp)
-                        .rotate(chevronRotation),
+                        .rotate(chevronRotation)
                 )
             }
         }
@@ -104,24 +90,24 @@ fun PriceFilterDropdown(
             visible = expanded,
             enter = expandVertically(animationSpec = spring(
                 dampingRatio = Spring.DampingRatioMediumBouncy,
-                stiffness = Spring.StiffnessLow,
+                stiffness = Spring.StiffnessLow
             )) + fadeIn(spring(
                 dampingRatio = Spring.DampingRatioMediumBouncy,
-                stiffness = Spring.StiffnessLow,
+                stiffness = Spring.StiffnessLow
             )),
             exit = shrinkVertically(animationSpec = spring(
                 dampingRatio = Spring.DampingRatioMediumBouncy,
-                stiffness = Spring.StiffnessLow,
+                stiffness = Spring.StiffnessLow
             )) + fadeOut(spring(
                 dampingRatio = Spring.DampingRatioMediumBouncy,
-                stiffness = Spring.StiffnessLow,
-            )),
+                stiffness = Spring.StiffnessLow
+            ))
         ) {
             AuroraFloating(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(top = 8.dp),
-                shape = MaterialTheme.shapes.medium,
+                shape = MaterialTheme.shapes.medium
             ) {
                 Column {
                     options.forEachIndexed { index, level ->
@@ -129,7 +115,7 @@ fun PriceFilterDropdown(
                         Text(
                             text = priceLabel(level),
                             style = MaterialTheme.typography.bodyMedium.copy(
-                                fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal,
+                                fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal
                             ),
                             color = if (selected) AuroraTokens.AccentCyan else AuroraTokens.TextPrimary,
                             modifier = Modifier
@@ -138,12 +124,12 @@ fun PriceFilterDropdown(
                                     onPriceChange(level)
                                     expanded = false
                                 }
-                                .padding(horizontal = 16.dp, vertical = 14.dp),
+                                .padding(horizontal = 16.dp, vertical = 14.dp)
                         )
                         if (index < options.lastIndex) {
                             HorizontalDivider(
                                 color = AuroraTokens.SurfaceBorder,
-                                modifier = Modifier.padding(horizontal = 16.dp),
+                                modifier = Modifier.padding(horizontal = 16.dp)
                             )
                         }
                     }
