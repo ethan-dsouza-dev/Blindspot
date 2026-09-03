@@ -19,17 +19,9 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.blindspot.app.ui.components.aurora.AuroraFloating
-import com.blindspot.app.ui.components.focusEffect
 import com.blindspot.app.ui.components.navItemPress
 import com.blindspot.app.ui.theme.AuroraTokens
 
-/**
- * Floating circular action button for the map screen: 48dp aurora pill with the shared
- * press/focus interactions. When [active], the resting [tint] icon swaps to [activeTint] and a
- * soft glow fill renders behind it (mirroring the AccentCyanGlow token at the active color).
- *
- * Caller supplies placement via [modifier]; the button itself enforces the 48dp circle.
- */
 @Composable
 fun MapFab(
     icon: ImageVector,
@@ -55,8 +47,7 @@ fun MapFab(
                 enabled = enabled,
                 onClick = onClick,
             )
-            .navItemPress(interactionSource = interactionSource)
-            .focusEffect(interactionSource = interactionSource),
+            .navItemPress(interactionSource = interactionSource),
     ) {
         Box(
             modifier = Modifier
