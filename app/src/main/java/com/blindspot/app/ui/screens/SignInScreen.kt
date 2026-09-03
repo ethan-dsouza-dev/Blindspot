@@ -38,7 +38,7 @@ import org.koin.androidx.compose.koinViewModel
 fun SignInScreen(
     onSignedIn: () -> Unit,
     modifier: Modifier = Modifier,
-    viewModel: AuthViewModel = koinViewModel(),
+    viewModel: AuthViewModel = koinViewModel()
 ) {
     val state = viewModel.uiState
     val activity = LocalActivity.current
@@ -53,7 +53,7 @@ fun SignInScreen(
         modifier = modifier
             .fillMaxSize()
             .padding(horizontal = 24.dp),
-        contentAlignment = Alignment.Center,
+        contentAlignment = Alignment.Center
     ) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
@@ -86,7 +86,7 @@ fun SignInScreen(
                         onClick = { activity?.let { viewModel.signInWithGoogle(it) } },
                     )
                     .semantics { contentDescription = "Continue with Google" },
-                contentAlignment = Alignment.Center,
+                contentAlignment = Alignment.Center
             ) {
                 Image(
                     painter = painterResource(id = R.drawable.sign_in_with_google_dark),
@@ -106,8 +106,7 @@ fun SignInScreen(
             if (state is SignInUiState.Error) {
                 Spacer(modifier = Modifier.height(8.dp))
                 AuroraCard(
-                    color = AuroraTokens.Negative.copy(alpha = 0.15f),
-                    borderColor = AuroraTokens.Negative.copy(alpha = 0.4f),
+                    color = AuroraTokens.Negative.copy(alpha = 0.15f)
                 ) {
                     Text(
                         text = state.message,
