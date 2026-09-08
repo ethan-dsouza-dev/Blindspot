@@ -33,8 +33,20 @@ class TokenRefreshAuthenticator(
     private val authRepository: AuthRepository,
 ) : Authenticator {
 
+    @Synchronized
     override fun authenticate(route: Route?, response: Response): Request? {
         if (responseCount(response) >= 2) return null
+
+        // If another thread already refreshed the token while this one was waiting for the
+        // lock, the stored token will no longer match what this failed request originally sent.
+        // Reuse it instead of racing a second refresh against the single-use rotating token.
+        val failedAuthHeader = response.request.header("Authorization")
+        val currentToken = tokenStore.accessToken
+        if (currentToken != null && failedAuthHeader != "Bearer $currentToken") {
+            return response.request.newBuilder()
+                .header("Authorization", "Bearer $currentToken")
+                .build()
+        }
 
         val newTokens = runBlocking { authRepository.refreshTokens() } ?: return null
 
