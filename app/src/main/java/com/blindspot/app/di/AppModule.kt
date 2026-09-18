@@ -31,8 +31,10 @@ import com.blindspot.app.data.repository.FavoritesRepository
 import com.blindspot.app.BuildConfig
 import com.blindspot.app.data.repository.UnitsRepository
 import com.blindspot.app.data.repository.ThemeRepository
+import com.blindspot.app.data.remote.NotificationsApi
+import com.blindspot.app.data.repository.NotificationsRepository
 
-private const val BASE_URL = BuildConfig.BASE_URL
+private const val BASE_URL = BuildConfig.BASE_URL_STAGING
 private const val GOOGLE_SERVER_CLIENT_ID = BuildConfig.GOOGLE_SERVER_CLIENT_ID
 
 val appModule = module {
@@ -99,7 +101,10 @@ val appModule = module {
     single { LocationProvider(androidContext()) }
     single { CompassSensorManager(androidContext()) }
 
+    single { get<Retrofit>().create(NotificationsApi::class.java) }
+    single { NotificationsRepository(androidContext(), get()) }
+
     viewModel { AuthViewModel(get(), GOOGLE_SERVER_CLIENT_ID) }
     viewModel { PlacesViewModel(get(), get(), get(), get()) }
-    viewModel { ProfileViewModel(get(), get(), get(), get(), get()) }
+    viewModel { ProfileViewModel(get(), get(), get(), get(), get(), get()) }
 }

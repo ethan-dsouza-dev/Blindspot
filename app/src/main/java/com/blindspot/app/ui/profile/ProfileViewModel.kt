@@ -17,6 +17,7 @@ import kotlinx.coroutines.delay
 import com.blindspot.app.data.repository.UnitsRepository
 import com.blindspot.app.data.repository.ThemeRepository
 import com.blindspot.app.ui.theme.AppTheme
+import com.blindspot.app.data.repository.NotificationsRepository
 
 class ProfileViewModel(
     private val tokenStore: TokenStore,
@@ -24,6 +25,7 @@ class ProfileViewModel(
     private val placeRepository: PlaceRepository,
     private val unitsRepository: UnitsRepository,
     private val themeRepository: ThemeRepository,
+    private val notificationsRepository: NotificationsRepository,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ProfileUiState())
@@ -34,6 +36,15 @@ class ProfileViewModel(
         observeFavorites()
         observeUnits()
         observeTheme()
+        observeNotifications()
+    }
+
+    private fun observeNotifications() {
+        viewModelScope.launch {
+            notificationsRepository.notificationsEnabled.collect { value ->
+                _uiState.update { it.copy(notificationsEnabled = value) }
+            }
+        }
     }
 
     private fun observeTheme() {
@@ -110,8 +121,7 @@ class ProfileViewModel(
     }
 
     fun onToggleNotifications(enabled: Boolean) {
-        _uiState.update { it.copy(notificationsEnabled = enabled) }
-        // TODO: persist to DataStore/SharedPrefs
+        notificationsRepository.setNotificationsEnabled(enabled)
     }
 
     fun onSignOut() {

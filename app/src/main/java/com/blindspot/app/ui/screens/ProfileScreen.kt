@@ -1,6 +1,12 @@
 package com.blindspot.app.ui.screens
 
+import android.Manifest
+import android.content.pm.PackageManager
+import android.os.Build
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -13,6 +19,9 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -24,8 +33,6 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Person
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -36,8 +43,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.unit.dp
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImage
 import com.blindspot.app.data.model.Place
@@ -56,9 +66,6 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
 import org.koin.androidx.compose.koinViewModel
 import org.koin.compose.koinInject
-import androidx.compose.foundation.border
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.ui.graphics.Color
 
 private const val SAVED_PLACE_LABEL = "Saved"
 
@@ -95,6 +102,14 @@ private fun ProfileScreenContent(
     val favoriteIds by favoritesRepository.favoritePlaceIds.collectAsStateWithLifecycle()
     val coroutineScope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
+    val context = LocalContext.current
+
+    // Launched when the user turns Notifications ON and POST_NOTIFICATIONS isn't already
+    val notificationPermissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission(),
+    ) { granted ->
+        onToggleNotifications(granted)
+    }
 
     Box(modifier = Modifier.fillMaxSize()) {
         when {
@@ -257,7 +272,22 @@ private fun ProfileScreenContent(
                                 SettingRow(
                                     label = "Notifications",
                                     checked = uiState.notificationsEnabled,
-                                    onCheckedChange = onToggleNotifications,
+                                    onCheckedChange = { enabled ->
+                                        if (enabled && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                                            val alreadyGranted = ContextCompat.checkSelfPermission(
+                                                context, Manifest.permission.POST_NOTIFICATIONS,
+                                            ) == PackageManager.PERMISSION_GRANTED
+                                            if (alreadyGranted) {
+                                                onToggleNotifications(true)
+                                            } else {
+                                                notificationPermissionLauncher.launch(
+                                                    Manifest.permission.POST_NOTIFICATIONS,
+                                                )
+                                            }
+                                        } else {
+                                            onToggleNotifications(enabled)
+                                        }
+                                    },
                                 )
                             }
                         }
