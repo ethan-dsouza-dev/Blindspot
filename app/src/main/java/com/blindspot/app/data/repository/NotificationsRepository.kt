@@ -1,6 +1,7 @@
 package com.blindspot.app.data.repository
 
 import android.content.Context
+import android.util.Log
 import com.blindspot.app.data.remote.FcmTokenRequest
 import com.blindspot.app.data.remote.NotificationsApi
 import com.google.firebase.messaging.FirebaseMessaging
@@ -30,8 +31,7 @@ class NotificationsRepository(
 
         scope.launch {
             if (enabled) {
-                val token = FirebaseMessaging.getInstance().token.await()
-                registerToken(token)
+                fetchTokenAndRegister()
             } else {
                 unregisterToken()
             }
@@ -45,15 +45,26 @@ class NotificationsRepository(
         scope.launch { registerToken(token) }
     }
 
+    private suspend fun fetchTokenAndRegister() {
+        runCatching { FirebaseMessaging.getInstance().token.await() }
+            .onSuccess { token -> registerToken(token) }
+            .onFailure { e -> Log.e(TAG, "Failed to fetch FCM token", e) }
+    }
+
     private suspend fun registerToken(token: String) {
         runCatching { notificationsApi.registerFcmToken(FcmTokenRequest(token)) }
+            .onFailure { e -> Log.e(TAG, "Failed to register FCM token with backend", e) }
     }
 
     private suspend fun unregisterToken() {
-        runCatching { notificationsApi.unregisterFcmToken() }
+        runCatching {
+            val token = FirebaseMessaging.getInstance().token.await()
+            notificationsApi.unregisterFcmToken(FcmTokenRequest(token))
+        }.onFailure { e -> Log.e(TAG, "Failed to unregister FCM token with backend", e) }
     }
 
     private companion object {
+        const val TAG = "NotificationsRepository"
         const val PREFS_NAME = "notifications_prefs"
         const val KEY_ENABLED = "notifications_enabled"
     }
